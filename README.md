@@ -1,35 +1,30 @@
 # Grammar Playground (GP) - Engenharia de Linguagens 2026
 
-[cite_start]Este projeto consiste no desenvolvimento de um ambiente gráfico para analisar e trabalhar com gramáticas independentes de contexto do tipo **LL(1)**[cite: 7]. [cite_start]O objetivo é fornecer uma ferramenta completa para a especificação de gramáticas, deteção de conflitos e geração de parsers[cite: 8, 9, 10].
+Ambiente gráfico desenvolvido para analisar gramáticas independentes de contexto do tipo **LL(1)**.
 
-## Estado Atual do Projeto (Fase 1)
-
-Até ao momento, implementámos o motor central do sistema, permitindo a transição do modelo teórico para uma interface funcional. O sistema já cumpre os seguintes requisitos:
+## Funcionalidades Implementadas
 
 ### 1. Modelação da Gramática
-- [cite_start]**Estrutura Base:** Identificação automática de símbolos terminais, não-terminais e produções[cite: 22].
-- [cite_start]**Símbolos Específicos:** Suporte total para o símbolo vazio (epsilon `e`)[cite: 32].
-- [cite_start]**Exemplo Real:** O sistema já processa com sucesso o subconjunto da linguagem Pascal fornecido no enunciado [cite: 25, 26, 27-40].
+- **Identificação Automática:** Separação entre Terminais e Não-Terminais.
+- **Suporte a Epsilon:** Tratamento de produções vazias (`e`).
+- **Exemplo Pascal:** Processamento completo do subconjunto da linguagem Pascal.
 
-### 2. Análise LL(1) Automática
-- [cite_start]**Conjuntos FIRST:** Cálculo dos terminais que iniciam as derivações[cite: 23].
-- [cite_start]**Conjuntos FOLLOW:** Cálculo dos símbolos que podem aparecer à direita de um não-terminal[cite: 23].
-- [cite_start]**Tabela de Parsing:** Construção da matriz de análise sintática LL(1) baseada nos conjuntos anteriores[cite: 23].
+### 2. Motor de Análise LL(1)
+- **Cálculo de Conjuntos:** Geração automática de FIRST e FOLLOW.
+- **Tabela de Parsing:** Construção da matriz de decisão para análise sintática.
+- **Deteção de Conflitos:** Identificação de conflitos FIRST/FIRST e FIRST/FOLLOW.
 
-### 3. Deteção de Conflitos e Validação
-- [cite_start]**Identificação de Erros:** O sistema deteta conflitos **FIRST/FIRST** e **FIRST/FOLLOW** para produções anuláveis[cite: 24].
-- [cite_start]**Interface Web:** Integração de toda a lógica numa interface gráfica Web que permite o input de gramáticas e visualização imediata[cite: 19].
+### 3. Interface e Ferramentas
+- **Ambiente Web:** Interface interativa para inserção de gramáticas e visualização de tabelas.
+- **Analisador de Frases:** Validação de cadeias de entrada (tokens) baseada na tabela gerada.
 
----
+## Instalação e Uso
 
-## Como Utilizar
+1. Instalar Flask: `pip install flask`
+2. Executar: `python app.py`
+3. Aceder: `http://127.0.0.1:5000`
 
-### Pré-requisitos
-- **Python 3.x** instalado.
-- **Flask** (instalar via `pip install flask`).
-
-### Execução
-1. Clona o repositório ou descarrega os ficheiros.
-2. No terminal, dentro da pasta do projeto, executa:
-   ```bash
-   python app.py
+## 📂 Estrutura
+- `core/`: Lógica algorítmica e matemática.
+- `templates/`: Interface gráfica.
+- `app.py`: Servidor e rotas do projeto.
