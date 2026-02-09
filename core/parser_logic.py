@@ -2,65 +2,55 @@ class AnalisadorGramatica:
     def __init__(self, producoes):
         self.producoes = producoes
         self.nao_terminais = list(producoes.keys())
+        self.terminais = self._extrair_terminais()
         self.first = {nt: set() for nt in self.nao_terminais}
         self.follow = {nt: set() for nt in self.nao_terminais}
+        self.tabela = {} # Estrutura: {(Não-Terminal, Terminal): [Produção]}
+        self.conflitos = []
 
-    def calcular_first(self, simbolo):
-        if simbolo not in self.nao_terminais:
-            return {simbolo}
-        
-        res = set()
-        for derivacao in self.producoes[simbolo]:
-            if derivacao[0] == 'e':
-                res.add('e')
-            else:
+    def _extrair_terminais(self):
+        term = set()
+        for corpos in self.producoes.values():
+            for derivacao in corpos:
                 for s in derivacao:
-                    f = self.calcular_first(s)
-                    res.update(f - {'e'})
-                    if 'e' not in f: break
-                else:
-                    res.add('e')
-        return res
+                    if s not in self.nao_terminais and s != 'e':
+                        term.add(s)
+        term.add('$') # Fim de frase
+        return term
 
-    def calcular_follow(self, simbolo_alvo):
-        # A primeira regra: Símbolo inicial recebe $ (fim de frase)
-        if simbolo_alvo == self.nao_terminais[0]:
-            self.follow[simbolo_alvo].add('$')
+    # ... (Manter as funções calcular_first e calcular_follow que já tínhamos) ...
 
+    def construir_tabela(self):
         for nt, derivacoes in self.producoes.items():
             for derivacao in derivacoes:
-                if simbolo_alvo in derivacao:
-                    idx = derivacao.index(simbolo_alvo)
-                    proximo = derivacao[idx + 1:]
-                    
-                    if proximo:
-                        # Se houver algo depois, adiciona o FIRST do que vem a seguir
-                        f_proximo = self.get_first_de_sequencia(proximo)
-                        self.follow[simbolo_alvo].update(f_proximo - {'e'})
-                        if 'e' in f_proximo:
-                            self.follow[simbolo_alvo].update(self.follow[nt])
-                    else:
-                        # Se for o último, recebe o FOLLOW da cabeça da produção
-                        if nt != simbolo_alvo:
-                            self.follow[simbolo_alvo].update(self.follow[nt])
+                # 1. Para cada terminal 't' no FIRST da derivação
+                primeiros = self.get_first_de_sequencia(derivacao)
+                for t in primeiros:
+                    if t != 'e':
+                        self._adicionar_na_tabela(nt, t, derivacao)
+                
+                # 2. Se a derivação pode ser vazia (e), olha para o FOLLOW do NT
+                if 'e' in primeiros:
+                    for t in self.follow[nt]:
+                        self._adicionar_na_tabela(nt, t, derivacao)
 
-    def get_first_de_sequencia(self, sequencia):
-        res = set()
-        for s in sequencia:
-            f = self.calcular_first(s)
-            res.update(f - {'e'})
-            if 'e' not in f: return res
-        res.add('e')
-        return res
+    def _adicionar_na_tabela(self, nt, t, derivacao):
+        chave = (nt, t)
+        if chave not in self.tabela:
+            self.tabela[chave] = []
+        
+        # Deteção de Conflitos LL(1) 
+        if derivacao not in self.tabela[chave]:
+            self.tabela[chave].append(derivacao)
+            if len(self.tabela[chave]) > 1:
+                self.conflitos.append(f"Conflito em ({nt}, {t}): {self.tabela[chave]}")
 
-    def executar(self):
-        # Calcula todos os FIRST
-        for nt in self.nao_terminais:
-            self.first[nt] = self.calcular_first(nt)
+    def executar_completo(self):
+        # 1. Conjuntos base 
+        for nt in self.nao_terminais: self.first[nt] = self.calcular_first(nt)
+        for _ in range(3): 
+            for nt in self.nao_terminais: self.calcular_follow(nt)
         
-        # Calcula FOLLOW (precisa de várias passagens para propagar símbolos)
-        for _ in range(3): # Loop simples para garantir propagação
-            for nt in self.nao_terminais:
-                self.calcular_follow(nt)
-        
-        return self.first, self.follow
+        # 2. Tabela e Conflitos [cite: 17, 24]
+        self.construir_tabela()
+        return self.first, self.follow, self.tabela, self.conflitos
