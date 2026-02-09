@@ -1,0 +1,7 @@
+Program -> StmtList
+StmtList -> Stmt StmtListPrime
+StmtListPrime -> Stmt StmtListPrime | e
+Stmt -> id : Expr
+Expr -> Term ExprPrime
+ExprPrime -> + Term ExprPrime | e
+Term -> id | number
