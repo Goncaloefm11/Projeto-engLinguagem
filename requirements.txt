@@ -1,0 +1,11 @@
+"""
+Grammar Playground - LL(1) Grammar Analysis Tool
+Dependency requirements file
+
+Install with: pip install -r requirements.txt
+"""
+
+flask>=2.0.0
+lark>=1.1.0
+networkx>=2.6
+matplotlib>=3.4.0
