@@ -1,0 +1,102 @@
+start: instruction+
+
+instruction: assignment
+           | conditional
+           | loop
+           | try_catch_stmt
+           | throw_stmt
+           | exec_stmt
+           | flow_control ";"
+           | print_stmt
+           | block
+
+block: "{" instruction+ "}"
+
+// Separamos assign_expr para poder usá-lo dentro do loop FOR sem ponto e vírgula
+assignment: assign_expr ";"
+assign_expr: VAR "=" expression
+
+conditional: "if" "(" expression ")" block ("else" block)?
+
+// --- Ciclos (Loops) ---
+loop: while_loop
+    | do_while_loop
+    | for_loop
+
+// 1. While simples
+while_loop: "while" "(" expression ")" block
+
+// 2. Do-While (Executa pelo menos uma vez)
+do_while_loop: "do" block "while" "(" expression ")" ";"
+
+// 3. For Loop (Estilo C)
+// Estrutura: for (init; condicao; incremento)
+for_loop: "for" "(" assign_expr ";" expression ";" assign_expr ")" block
+
+// --- Alteração de Fluxo (Jumps) ---
+// Ex: break; continue; return 0;
+flow_control: "break"              -> break_stmt
+            | "continue"           -> continue_stmt
+            | "return" expression? -> return_stmt
+
+// --- Tratamento de Exceções (Exceptions) ---
+try_catch_stmt: "try" block "catch" "(" VAR ")" block 
+              | "try" block "catch" block
+
+throw_stmt: "throw" expression ";"
+
+exec_stmt: "exec" "(" expression ")" ";"
+print_stmt: "print" "(" expression ")" ";"
+
+
+expression: logical_or
+
+// Precedência: OR < AND < COMP < SUM < PROD
+logical_or: logical_and ("or" logical_and)*
+logical_and: comparison ("and" comparison)*
+
+comparison: sum (COMP_OP sum)*
+
+sum: product ((PLUS | MINUS) product)*
+product: atom ((MULT | DIV) atom)*
+
+// Átomos (Valores base)
+atom: NUMBER           -> number
+    | STRING           -> string
+    | TRUE             -> true
+    | FALSE            -> false
+    | VAR              -> var_access
+    | list             -> list_structure
+    | dict             -> dict_structure
+    | "(" expression ")"
+
+
+
+// Listas: [1, 2, "a"]
+list: "[" [expression ("," expression)*] "]"
+
+// Dicionários: {"id": 1, "val": 20}
+dict: "{" [pair ("," pair)*] "}"
+pair: expression ":" expression
+
+
+PLUS: "+"
+MINUS: "-"
+MULT: "*"
+DIV: "/"
+COMP_OP: "==" | "!=" | "<=" | ">=" | "<" | ">"
+
+TRUE: "true"
+FALSE: "false"
+
+VAR: /[a-zA-Z_][a-zA-Z0-9_]*/
+
+
+%import common.SIGNED_NUMBER -> NUMBER
+%import common.ESCAPED_STRING -> STRING
+%import common.WS
+
+COMMENT: /\/\/.*/
+
+%ignore WS
+%ignore COMMENT
