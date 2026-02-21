@@ -1,0 +1,9 @@
+# Example Grammar: Pascal Subset
+
+Program     → StmtList 
+StmtList    → Stmt StmtList' 
+StmtList'   → ; Stmt StmtList' | ε 
+Stmt        → id := Expr 
+Expr        → Term Expr' 
+Expr'       → + Term Expr' | ε 
+Term        → id | number

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Grammar Playground</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg shadow-sm py-3">
+        <div class="container">
+            <a class="navbar-brand text-white fw-bold" href="#">Grammar Playground</a>
+            <span class="text-white-50 small">Projeto de Engenharia de Linguagens · 2º Semestre 2026</span>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-card">
+                <div>
+                    <h1 class="hero-title">Ambiente LL(1) para Analise e Geracao</h1>
+                    <p class="hero-subtitle">
+                        Analise conflitos, gere parsers e explore arvores de derivacao numa so interface.
+                    </p>
+                </div>
+                <div class="hero-meta">
+                    <div class="meta-pill">FIRST/FOLLOW</div>
+                    <div class="meta-pill">LL(1) Table</div>
+                    <div class="meta-pill">Visitor Code</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-grid">
+        <section class="inputs">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="bi bi-journal-code me-2"></i>Gramatica</span>
+                    <button class="btn btn-primary btn-sm" onclick="analyzeGrammar()">
+                        <span id="analyzeSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
+                        Analisar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <label for="exampleSelect" class="form-label">Exemplos</label>
+                    <select id="exampleSelect" class="form-select mb-3">
+                        <option value="">Seleciona um exemplo</option>
+                        {% for key in examples.keys() %}
+                        <option value="{{ key }}">{{ key }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label for="grammarInput" class="form-label">Gramatica (formato custom)</label>
+                    <textarea id="grammarInput" class="form-control grammar-input" rows="10" placeholder="S → A B&#10;A → a | ε&#10;B → b"></textarea>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-terminal me-2"></i>Frase de Entrada
+                </div>
+                <div class="card-body">
+                    <textarea id="inputPhrase" class="form-control" rows="4" placeholder="id := number + id"></textarea>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-success" onclick="parseInput()">
+                            <span id="parseSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
+                            Analisar Frase
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-cpu me-2"></i>Geracao de Parser
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="parserType" class="form-label">Tipo</label>
+                            <select id="parserType" class="form-select">
+                                <option value="recursive">Recursivo Descendente</option>
+                                <option value="table">Dirigido por Tabela</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="parserLanguage" class="form-label">Linguagem</label>
+                            <select id="parserLanguage" class="form-select">
+                                <option value="python">Python</option>
+                                <option value="javascript">JavaScript</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-primary mt-3" onclick="generateParser()">
+                        Gerar Parser
+                    </button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-bezier2 me-2"></i>Visitor
+                </div>
+                <div class="card-body">
+                    <label for="visitorCode" class="form-label">Codigo de visita (classe MyVisitor)</label>
+                    <textarea id="visitorCode" class="form-control" rows="8" placeholder="class MyVisitor(TreeVisitor):&#10;    def visit_Program(self, node):&#10;        ..."></textarea>
+                    <button class="btn btn-warning mt-3" onclick="executeVisitor()">
+                        <span id="visitorSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
+                        Executar Visitor
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <section class="results">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-diagram-3 me-2"></i>Resultados
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs" id="resultTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#analysisTab" role="tab">Analise</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#tableTab" role="tab">Tabela LL(1)</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#treeTab" role="tab">Arvore</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#stepsTab" role="tab">Passos</a>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" href="#codeTab" role="tab">Codigo</a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content pt-3">
+                        <div class="tab-pane fade show active" id="analysisTab" role="tabpanel">
+                            <div id="analysisResult" class="empty-state">Analisa uma gramatica para ver o relatorio.</div>
+                        </div>
+                        <div class="tab-pane fade" id="tableTab" role="tabpanel">
+                            <div class="table-container" id="ll1TableResult">
+                                <div class="empty-state">A tabela LL(1) aparece aqui.</div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="treeTab" role="tabpanel">
+                            <div id="treeResult" class="tree-container">A arvore de derivacao aparece aqui.</div>
+                        </div>
+                        <div class="tab-pane fade" id="stepsTab" role="tabpanel">
+                            <div id="stepsResult" class="empty-state">Os passos de derivacao aparecem aqui.</div>
+                        </div>
+                        <div class="tab-pane fade" id="codeTab" role="tabpanel">
+                            <div id="codeResult" class="code-output">O codigo gerado aparece aqui.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        const examples = {{ examples | tojson | safe }};
+    </script>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
