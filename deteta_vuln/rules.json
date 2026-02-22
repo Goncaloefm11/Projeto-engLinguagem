@@ -1,4 +1,0 @@
-{
-  "banned_vars": ["temp", "foo", "teste"],
-  "max_nesting_depth": 3
-}
