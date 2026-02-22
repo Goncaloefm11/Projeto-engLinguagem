@@ -19,24 +19,22 @@ app.secret_key = os.environ.get('SECRET_KEY', 'grammar-playground-secret-key')
 
 
 # Example grammars
+# No ficheiro web/app.py
+
 EXAMPLE_GRAMMARS = {
     "pascal_subset": """Program → StmtList
-StmtList → Stmt StmtList'
-StmtList' → ; Stmt StmtList' | ε
-Stmt → id := Expr
-Expr → Term Expr'
-Expr' → + Term Expr' | ε
-Term → id | number""",
-    
-    "arithmetic": """E → T E'
-E' → + T E' | ε
-T → F T'
-T' → * F T' | ε
-F → ( E ) | id | number""",
-    
-    "simple": """S → A B
-A → a | ε
-B → b | c"""
+    StmtList → Stmt StmtList_prime
+    StmtList_prime → ; Stmt StmtList_prime | ε
+    Stmt → id := Expr
+    Expr → Term Expr_prime
+    Expr_prime → + Term Expr_prime | ε
+    Term → id | number""",
+        
+        "arithmetic": """E → T E_prime
+    E_prime → + T E_prime | ε
+    T → F T_prime
+    T_prime → * F T_prime | ε
+    F → ( E ) | id | number"""
 }
 
 

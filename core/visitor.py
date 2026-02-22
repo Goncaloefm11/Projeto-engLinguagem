@@ -17,6 +17,7 @@ class TreeVisitor:
         visitor_method = getattr(self, method_name, self.generic_visit)
         return visitor_method(node)
 
+
     def generic_visit(self, node):
         """Comportamento por defeito: visita todos os filhos e junta os resultados."""
         results = []
