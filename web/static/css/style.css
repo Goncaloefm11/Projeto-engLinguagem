@@ -58,7 +58,7 @@ h1, h2, h3, .navbar-brand {
 .btn-outline-primary:hover { background-color: var(--secondary-color); border-color: var(--secondary-color); }
 .btn-warning { background-color: var(--accent-color); border-color: var(--accent-color); color: #2c2c2c; }
 
-.grammar-input, #inputPhrase, #visitorCode {
+.grammar-input, #inputPhrase {
     font-family: 'IBM Plex Mono', ui-monospace, monospace;
     height: auto !important;
     min-height: 200px;

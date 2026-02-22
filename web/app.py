@@ -8,10 +8,8 @@ import sys
 
 from core.grammar import Grammar, GrammarParser
 from core.ll1_analyzer import LL1Analyzer
-from core.parser_generator import RecursiveDescentGenerator, TableDrivenGenerator
+from core.parser_generator import RecursiveDescentGenerator
 from core.derivation_tree import DerivationTreeBuilder, build_derivation_tree
-from core.visitor import TreeVisitor
-import traceback
 
 
 app = Flask(__name__)
@@ -89,7 +87,6 @@ def generate_parser():
     """Generate parser code from grammar"""
     data = request.get_json()
     grammar_text = data.get('grammar', '')
-    parser_type = data.get('type', 'recursive')  # 'recursive' or 'table'
     language = data.get('language', 'python')
     
     if not grammar_text.strip():
@@ -126,17 +123,13 @@ def generate_parser():
                 ]
             })
         
-        if parser_type == 'recursive':
-            generator = RecursiveDescentGenerator(grammar, analyzer)
-        else:
-            generator = TableDrivenGenerator(grammar, analyzer)
-        
+        generator = RecursiveDescentGenerator(grammar, analyzer)
         code = generator.generate(language)
         
         return jsonify({
             'success': True,
             'code': code,
-            'type': parser_type,
+            'type': 'recursive',
             'language': language
         })
     
@@ -206,60 +199,6 @@ def validate_grammar():
         return jsonify({
             'valid': False,
             'errors': [str(e)]
-        })
-
-@app.route('/execute-visitor', methods=['POST'])
-def execute_visitor():
-    """Gera a árvore e aplica o código de visita introduzido pelo utilizador"""
-    data = request.get_json()
-    grammar_text = data.get('grammar', '')
-    input_text = data.get('input', '')
-    visitor_code = data.get('visitor_code', '')
-    
-    if not visitor_code.strip():
-        return jsonify({'success': False, 'error': 'Nenhum código de visita fornecido.'})
-        
-    try:
-        # 1. Gerar a árvore primeiro (reutilizando a tua função existente)
-        parse_result = build_derivation_tree(grammar_text, input_text)
-        
-        if not parse_result.get('success'):
-            return jsonify({'success': False, 'error': 'Erro ao gerar a árvore.', 'details': parse_result.get('errors')})
-            
-        # Precisamos da árvore real (objetos Python) e não do dict JSON retornado pela build_derivation_tree.
-        # Por isso, refazemos o parse interno rapidamente para ter os objetos:
-        grammar = GrammarParser.parse(grammar_text)
-        from core.lark_parser import LarkTreeBuilder
-        builder = LarkTreeBuilder(grammar)
-        tree_root, _ = builder.parse(input_text)
-        
-        # 2. Preparar o ambiente seguro (sandbox básica) para o exec()
-        local_env = {}
-        global_env = {'TreeVisitor': TreeVisitor} # Dá acesso apenas à classe base
-        
-        # 3. Executar o código do utilizador
-        # O utilizador DEVE definir uma classe chamada 'MyVisitor' que herda de TreeVisitor
-        exec(visitor_code, global_env, local_env)
-        
-        if 'MyVisitor' not in local_env:
-            return jsonify({'success': False, 'error': 'O teu código deve conter uma classe chamada "MyVisitor".'})
-            
-        # 4. Instanciar e visitar a árvore
-        visitor_instance = local_env['MyVisitor']()
-        generated_code = visitor_instance.visit(tree_root)
-        
-        return jsonify({
-            'success': True,
-            'generated_code': generated_code
-        })
-        
-    except Exception as e:
-        # Apanha erros de sintaxe no código do utilizador
-        error_trace = traceback.format_exc()
-        return jsonify({
-            'success': False, 
-            'error': f'Erro na execução do Visitor: {str(e)}',
-            'traceback': error_trace
         })
 
 if __name__ == '__main__':

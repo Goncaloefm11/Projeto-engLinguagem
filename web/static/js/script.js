@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     autoResize();
 
     // Redimensionar enquanto o utilizador digita
-    ['grammarInput', 'visitorCode', 'inputPhrase'].forEach(id => {
+    ['grammarInput', 'inputPhrase'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', autoResize);
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // A função autoResize pode ficar fora, pois apenas é chamada após o DOM estar pronto
 function autoResize() {
-    const textareas = ['grammarInput', 'visitorCode', 'inputPhrase'];
+    const textareas = ['grammarInput', 'inputPhrase'];
     textareas.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -296,7 +296,6 @@ function displayParseResult(data) {
 
 async function generateParser() {
     const grammar = document.getElementById('grammarInput').value;
-    const type = document.getElementById('parserType').value;
     const language = document.getElementById('parserLanguage').value;
     
     try {
@@ -305,7 +304,7 @@ async function generateParser() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 grammar: grammar,
-                type: type,
+                type: 'recursive',
                 language: language
             })
         });
@@ -314,56 +313,6 @@ async function generateParser() {
         displayCodeResult(data);
     } catch (error) {
         alert('Erro ao gerar: ' + error.message);
-    }
-}
-
-async function executeVisitor() {
-    const grammar = document.getElementById('grammarInput').value;
-    const input = document.getElementById('inputPhrase').value;
-    const visitorCode = document.getElementById('visitorCode').value;
-    const spinner = document.getElementById('visitorSpinner');
-
-    if (!input || !visitorCode) {
-        alert("Por favor, preenche a 'Frase de entrada' no separador Frase e o código no separador Visitor.");
-        return;
-    }
-
-    spinner.style.display = 'inline-block';
-
-    try {
-        const response = await fetch('/execute-visitor', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                grammar: grammar,
-                input: input,
-                visitor_code: visitorCode
-            })
-        });
-
-        const data = await response.json();
-        const container = document.getElementById('codeResult');
-
-        if (!data.success) {
-            container.innerHTML = `
-                <div class="alert alert-danger shadow-sm">
-                    <h6 class="fw-bold"><i class="bi bi-bug-fill me-2"></i>Erro na Execução do Código Python:</h6>
-                    <p>${data.error}</p>
-                    ${data.traceback ? `<pre style="font-size: 11px; background: #222; color: #f8333c; padding: 10px; border-radius: 5px; overflow-x: auto;">${data.traceback}</pre>` : ''}
-                </div>`;
-        } else {
-            container.innerHTML = `
-                <h6><i class="bi bi-file-earmark-code-fill me-2"></i>Resultado da Função de Visita:</h6>
-                <pre class="p-3 bg-dark text-light rounded border border-secondary">${escapeHtml(data.generated_code)}</pre>`;
-        }
-
-        const codeTab = document.querySelector('a[href="#codeTab"]');
-        new bootstrap.Tab(codeTab).show();
-
-    } catch (error) {
-        alert('Erro fatal ao executar a comunicação com o servidor: ' + error.message);
-    } finally {
-        spinner.style.display = 'none';
     }
 }
 
@@ -379,7 +328,7 @@ function displayCodeResult(data) {
         container.innerHTML = `
             <h6 class="text-white mb-3">
                 <i class="bi bi-file-code me-2"></i>
-                Código Fonte Gerado (${data.type === 'recursive' ? 'Descendente Recursivo' : 'Dirigido por Tabela'}) - ${data.language}
+                Código Fonte Gerado (Descendente Recursivo) - ${data.language}
             </h6>
             <pre><code class="language-${data.language}">${escapeHtml(data.code)}</code></pre>
         `;

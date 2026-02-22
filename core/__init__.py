@@ -18,7 +18,7 @@ from .ll1_analyzer import (
 )
 from .parser_generator import (
     RecursiveDescentGenerator,
-    TableDrivenGenerator
+    # TableDrivenGenerator  # Removido da API pública
 )
 from .derivation_tree import (
     TreeNode,
@@ -47,7 +47,7 @@ __all__ = [
     'LL1Table',
     'Conflict',
     'RecursiveDescentGenerator',
-    'TableDrivenGenerator',
+    # 'TableDrivenGenerator',  # Removido da API pública
     'TreeNode',
     'Token',
     'DerivationTreeBuilder',
