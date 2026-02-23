@@ -82,7 +82,27 @@ h1, h2, h3, .navbar-brand {
 .conflict-alert {
     background-color: #fff3cd;
     border-left: 4px solid var(--warning-color);
+    position: relative;
 }
+
+.conflict-alert .btn-success {
+    background-color: var(--success-color);
+    border-color: var(--success-color);
+    transition: all 0.3s ease;
+}
+
+.conflict-alert .btn-success:hover {
+    background-color: #236b46;
+    border-color: #236b46;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(46, 139, 87, 0.3);
+}
+
+.conflict-alert .btn-success:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 
 .table-container { overflow-x: auto; }
 .ll1-table th { background-color: var(--primary-color); color: white; position: sticky; top: 0; }
