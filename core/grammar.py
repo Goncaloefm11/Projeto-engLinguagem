@@ -193,7 +193,11 @@ class GrammarParser:
         grammar = Grammar()
         
         # 1. Análise Lexical Simples (Separação por linhas de produção)
-        lines = [line.strip() for line in text.split('\n') if line.strip() and not line.startswith('#')]
+        # Normalizar '\n' literais que possam vir de JSON para quebras de linha reais
+        normalized_text = text.replace('\\n', '\n')
+        
+        # Usar splitlines() lida melhor com diferentes tipos de quebra de linha (\r\n, \n)
+        lines = [line.strip() for line in normalized_text.splitlines() if line.strip() and not line.startswith('#')]
         
         all_symbols = set()
         productions_raw = []
