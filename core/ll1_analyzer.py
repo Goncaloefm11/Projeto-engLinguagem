@@ -19,6 +19,7 @@ class Conflict:
     description: str
     suggestion: str = ""
     corrected_grammar: str = ""  # Grammar text with suggested fix applied
+    example_sentence: str = ""  # Simple example sentence for the suggested grammar
 
 
 @dataclass
@@ -235,7 +236,7 @@ class LL1Analyzer:
                 f"a produção {non_nullable_prods[0]} porque '{terminal}' está "
                 f"em FOLLOW({nt}) e também em FIRST da outra produção."
             )
-            suggestion, corrected_grammar = self._suggest_first_follow_fix(nt, productions)
+            suggestion, corrected_grammar, example = self._suggest_first_follow_fix(nt, productions)
         else:
             # FIRST/FIRST conflict
             conflict_type = "FIRST/FIRST"
@@ -243,7 +244,7 @@ class LL1Analyzer:
                 f"Conflito FIRST/FIRST para {nt} com terminal '{terminal}': "
                 f"múltiplas produções começam com símbolos que derivam '{terminal}'."
             )
-            suggestion, corrected_grammar = self._suggest_first_first_fix(nt, terminal, productions)
+            suggestion, corrected_grammar, example = self._suggest_first_first_fix(nt, terminal, productions)
         
         return Conflict(
             type=conflict_type,
@@ -252,10 +253,11 @@ class LL1Analyzer:
             productions=productions,
             description=description,
             suggestion=suggestion,
-            corrected_grammar=corrected_grammar
+            corrected_grammar=corrected_grammar,
+            example_sentence=(example if 'example' in locals() else "")
         )
     
-    def _suggest_first_first_fix(self, nt: Symbol, terminal: Symbol, productions: List[Production]) -> Tuple[str, str]:
+    def _suggest_first_first_fix(self, nt: Symbol, terminal: Symbol, productions: List[Production]) -> Tuple[str, str, str]:
         """Suggest a fix for FIRST/FIRST conflicts (usually left factoring)"""
         # Check if productions share a common prefix
         if len(productions) < 2:
@@ -268,7 +270,7 @@ class LL1Analyzer:
         min_len = min(len(b) for b in bodies)
         
         for i in range(min_len):
-            symbols_at_i = set(b[i] for b in bodies)
+            symbols_at_i = {b[i] for b in bodies}
             if len(symbols_at_i) == 1:
                 common_prefix.append(bodies[0][i])
             else:
@@ -288,8 +290,48 @@ class LL1Analyzer:
                 f"  {nt} → {prefix_str} {new_nt}\n"
                 f"  {new_nt} → <sufixos diferentes>"
             )
-            return suggestion, corrected_grammar
-        expanded_bodies = self._expand_conflict_bodies(nt, terminal, productions)
+            example = self._generate_example_from_grammar_text(corrected_grammar)
+            return suggestion, corrected_grammar, example
+        # Try to expand leading non-terminals to reveal hidden common prefixes
+        expanded_bodies = self._expand_conflict_bodies(terminal, productions)
+
+        # Special-case: if each conflicting production can be expanded and all
+        # expansions (one representative per original production) are identical,
+        # then the productions are effectively equivalent and we can suggest
+        # simplifying to a single production (or inlining the non-terminal).
+        try_same = []
+        all_expandable = True
+        for prod in productions:
+            exps = self._expand_leading_nonterminals(prod.body, terminal, max_depth=2)
+            if not exps:
+                all_expandable = False
+                break
+            # take first expansion as representative
+            try_same.append(tuple(exps[0]))
+
+        if all_expandable and len(try_same) >= 2 and len(set(try_same)) == 1:
+            # All productions expand to the same body -> suggest simplification
+            rep_body = list(try_same[0])
+            if rep_body:
+                suffix_str = " ".join(str(s) for s in rep_body)
+            else:
+                suffix_str = 'ε'
+
+            # Build corrected grammar: remove the conflicting productions and
+            # add a single production nt -> rep_body
+            removed = productions
+            lines = [str(p) for p in self.grammar.productions if p not in removed]
+            lines.append(f"{nt} → {suffix_str}")
+            corrected_grammar = "\n".join(lines)
+
+            suggestion = (
+                f"Sugestão: Simplificação\n"
+                f"As produções conflitantes para {nt} derivam efetivamente o mesmo prefixo '{suffix_str}'. "
+                f"Considere simplificar para uma produção única:\n  {nt} → {suffix_str}\n"
+                f"ou remover a produção redundante (manter apenas uma fonte de '{suffix_str}')."
+            )
+            example = self._generate_example_from_grammar_text(corrected_grammar)
+            return suggestion, corrected_grammar, example
         if expanded_bodies:
             common_prefix = self._find_common_prefix(expanded_bodies)
             if common_prefix:
@@ -311,16 +353,14 @@ class LL1Analyzer:
                     f"  {new_nt} → <sufixos diferentes>"
                 )
                 return suggestion, corrected_grammar
-
         suggestion = (
             f"Sugestão: As produções para {nt} têm ambiguidade.\n"
             f"Considere reestruturar a gramática para eliminar a ambiguidade, "
             f"ou use uma gramática diferente que seja LL(1) compatível."
         )
-        return suggestion, ""
+        return suggestion, "", ""
 
-    def _expand_conflict_bodies(self, nt: Symbol, terminal: Symbol, 
-                                productions: List[Production]) -> List[List[Symbol]]:
+    def _expand_conflict_bodies(self, terminal: Symbol, productions: List[Production]) -> List[List[Symbol]]:
         """Expand leading non-terminals to expose a conflict terminal"""
         expanded_bodies: List[List[Symbol]] = []
         seen = set()
@@ -383,7 +423,7 @@ class LL1Analyzer:
         min_len = min(len(b) for b in bodies)
 
         for i in range(min_len):
-            symbols_at_i = set(b[i] for b in bodies)
+            symbols_at_i = {b[i] for b in bodies}
             if len(symbols_at_i) == 1:
                 common_prefix.append(bodies[0][i])
             else:
@@ -435,7 +475,8 @@ class LL1Analyzer:
             f"  2. Reestruturar a gramática para evitar que terminais "
             f"apareçam tanto em FIRST quanto em FOLLOW"
         )
-        return suggestion, corrected_grammar
+        example = self._generate_example_from_grammar_text(corrected_grammar)
+        return suggestion, corrected_grammar, example
     
     def _build_left_factored_grammar(self, nt: Symbol, conflict_prods: List[Production], 
                                      common_prefix: List[Symbol], new_nt_name: str) -> str:
@@ -471,6 +512,76 @@ class LL1Analyzer:
                 lines.append(str(prod))
         
         return "\n".join(lines)
+
+
+    def _generate_example_from_grammar_text(self, grammar_text: str, max_depth: int = 6) -> str:
+        """Generate a simple example sentence from grammar text by picking first alternatives.
+
+        This is a heuristic generator: it picks the first production for each non-terminal
+        and expands recursively up to max_depth. Returns an empty string if generation fails.
+        """
+        if not grammar_text or not grammar_text.strip():
+            return ""
+        try:
+            from .grammar import GrammarParser
+            g = GrammarParser.parse(grammar_text)
+        except Exception:
+            return ""
+
+        # Helper to expand a symbol
+        visited = {}
+
+        def expand_symbol(sym, depth):
+            if depth <= 0:
+                return []
+            # Terminal
+            if sym.is_terminal():
+                name = str(sym)
+                if name == 'id':
+                    return ['x']
+                if name == 'number':
+                    return ['1']
+                return [name]
+
+            # Non-terminal
+            # Find productions for this non-terminal
+            prods = [p for p in g.productions if p.head == sym]
+            if not prods:
+                return []
+
+            # Choose the first production by default
+            prod = prods[0]
+            if prod.is_epsilon_production():
+                return []
+
+            result = []
+            for s in prod.body:
+                if s.is_epsilon():
+                    continue
+                if s.is_terminal():
+                    result.extend(expand_symbol(s, depth - 1))
+                else:
+                    # find matching symbol object in parsed grammar
+                    # If symbol names differ in instances, match by name
+                    match_sym = None
+                    for nt in g.non_terminals:
+                        if str(nt) == str(s):
+                            match_sym = nt
+                            break
+                    if match_sym is None:
+                        # fallback: treat as terminal string
+                        result.append(str(s))
+                    else:
+                        result.extend(expand_symbol(match_sym, depth - 1))
+
+            return result
+
+        start = g.start_symbol
+        if not start:
+            return ""
+
+        tokens = expand_symbol(start, max_depth)
+        return " ".join(tokens)
     
     
     def first(self, symbol: Symbol) -> Set[Symbol]:
@@ -519,7 +630,8 @@ class LL1Analyzer:
                     "productions": [str(p) for p in c.productions],
                     "description": c.description,
                     "suggestion": c.suggestion,
-                    "corrected_grammar": c.corrected_grammar
+                    "corrected_grammar": c.corrected_grammar,
+                    "example_sentence": getattr(c, 'example_sentence', '')
                 }
                 for c in self.ll1_table.conflicts
             ],

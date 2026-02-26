@@ -161,6 +161,33 @@ def parse_input():
     
     try:
         result = build_derivation_tree(grammar_text, input_text)
+        # If parse failed, try to generate a simple example sentence from a suggested correction
+        if not result.get('success'):
+            try:
+                grammar = GrammarParser.parse(grammar_text)
+                analyzer = LL1Analyzer(grammar)
+                # Ensure analysis is run to populate conflicts
+                analyzer.analyze()
+
+                # Prefer example from the first conflict that has a corrected grammar
+                suggested_example = ""
+                for c in analyzer.ll1_table.conflicts:
+                    if getattr(c, 'corrected_grammar', None):
+                        example = analyzer._generate_example_from_grammar_text(c.corrected_grammar)
+                        if example:
+                            suggested_example = example
+                            break
+
+                # Fallback: example for the current grammar
+                if not suggested_example:
+                    suggested_example = analyzer._generate_example_from_grammar_text(grammar_text)
+
+                # Attach suggested example to result
+                result['suggested_example'] = suggested_example
+            except Exception:
+                # If anything fails, don't block the parse response
+                result['suggested_example'] = ""
+
         return jsonify(result)
     
     except Exception as e:

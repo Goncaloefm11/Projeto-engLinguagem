@@ -166,7 +166,7 @@ function displayAnalysisResult(data) {
         html += `
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h6 class="text-danger mb-0"><i class="bi bi-shield-exclamation me-2"></i>Conflitos Detetados e Sugestões:</h6>
-                <button class="btn btn-warning btn-sm" onclick="applyAllSuggestions()">
+                <button class="btn btn-warning btn-sm" onclick="applyAllSuggestions(event)">
                     <i class="bi bi-check-all me-1"></i>Aplicar Todas as Sugestões
                 </button>
             </div>
@@ -181,7 +181,7 @@ function displayAnalysisResult(data) {
                             <h6 class="text-danger fw-bold">${c.type}</h6>
                         </div>
                         ${hasCorrection ? `
-                            <button class="btn btn-sm btn-success" onclick="applySuggestion(${index})" title="Aplicar esta sugestão">
+                            <button class="btn btn-sm btn-success" onclick="applySuggestion(event, ${index})" title="Aplicar esta sugestão">
                                 <i class="bi bi-check-circle me-1"></i>Aplicar
                             </button>
                         ` : ''}
@@ -276,6 +276,21 @@ function displayParseResult(data) {
                 ${data.errors ? data.errors.map(e => `<p class="mb-1">${e}</p>`).join('') : data.error}
             </div>
         `;
+        // If backend provided a suggested example sentence for a corrected grammar, show it
+        if (data.suggested_example && data.suggested_example.trim() !== '') {
+            const exampleHtml = `
+                <div class="mt-3 alert alert-secondary">
+                    <h6 class="mb-1">Exemplo válido para a gramática:</h6>
+                    <div class="d-flex align-items-start">
+                        <pre id="suggestedExample" class="mb-0 bg-white p-2 border rounded flex-grow-1" style="font-size:13px;">${escapeHtml(data.suggested_example)}</pre>
+                        <div class="ms-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="useSuggestedExample()">Usar exemplo</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            treeContainer.innerHTML += exampleHtml;
+        }
         stepsContainer.innerHTML = `<div class="alert alert-danger">Derivação falhou.</div>`;
     } else {
         if (data.tree_text) {
@@ -386,7 +401,7 @@ function copyCode() {
     }
 }
 
-function applySuggestion(conflictIndex) {
+function applySuggestion(ev, conflictIndex) {
     if (!currentAnalysisReport || !currentAnalysisReport.conflicts) {
         alert('Nenhum relatório de análise disponível.');
         return;
@@ -398,78 +413,68 @@ function applySuggestion(conflictIndex) {
         return;
     }
     
-    // Apply the corrected grammar
+    // Apply the corrected grammar (do NOT auto-analyze)
     const grammarInput = document.getElementById('grammarInput');
     grammarInput.value = conflict.corrected_grammar;
-    
+
     // Resize the textarea
     autoResize();
-    
-    // Notify user
-    const btn = event.target.closest('button');
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Aplicado!';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        
-        // Optionally re-analyze
-        if (confirm('Deseja re-analisar a gramática corrigida?')) {
-            analyzeGrammar();
-        }
-    }, 1500);
+
+    // Visual feedback on the clicked button (if available)
+    const btn = ev && ev.target ? ev.target.closest('button') : null;
+    if (btn) {
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-check2 me-1"></i>Aplicado!';
+        btn.disabled = true;
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }, 1500);
+    }
+
+    // IMPORTANT: do not call analyzeGrammar() here. Let the user click "Analisar" when ready.
 }
 
-async function applyAllSuggestions() {
+async function applyAllSuggestions(ev) {
     if (!currentAnalysisReport || !currentAnalysisReport.conflicts || currentAnalysisReport.conflicts.length === 0) {
         alert('Nenhum conflito encontrado.');
         return;
     }
-    
-    const btn = event.target;
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="bi bi-check2-all me-1"></i>A aplicar...';
-    btn.disabled = true;
+
+    const btn = ev && ev.target ? ev.target : null;
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.innerHTML = '<i class="bi bi-check2-all me-1"></i>A aplicar...';
+        btn.disabled = true;
+    }
 
     const grammarInput = document.getElementById('grammarInput');
-    const maxIterations = 10;
-    let iterations = 0;
-    let applied = 0;
 
-    while (iterations < maxIterations) {
-        const conflictWithCorrection = currentAnalysisReport.conflicts.find(c =>
-            c.corrected_grammar && c.corrected_grammar.trim() !== ''
-        );
-
-        if (!conflictWithCorrection) {
-            break;
-        }
-
-        grammarInput.value = conflictWithCorrection.corrected_grammar;
-        autoResize();
-        applied += 1;
-
-        const data = await analyzeGrammar();
-        if (!data || !data.success) {
-            break;
-        }
-
-        iterations += 1;
-    }
-
-    if (iterations >= maxIterations) {
-        alert('Aplicacao interrompida: demasiadas iteracoes. Verifique os conflitos restantes.');
-    } else if (applied === 0) {
+    // Collect all conflicts that provide an automatic corrected grammar
+    const corrections = currentAnalysisReport.conflicts.filter(c => c.corrected_grammar && c.corrected_grammar.trim() !== '');
+    if (corrections.length === 0) {
         alert('Nenhuma correção automática disponível para os conflitos encontrados.');
+        if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+        return;
     }
 
-    btn.innerHTML = '<i class="bi bi-check2-all me-1"></i>Aplicadas!';
-    setTimeout(() => {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-    }, 1500);
+    // Apply the last suggested corrected grammar (safe, non-destructive automatic step)
+    // NOTE: We do NOT re-run analysis here. The user should click "Analisar" when ready.
+    grammarInput.value = corrections[corrections.length - 1].corrected_grammar;
+    autoResize();
+
+    alert(`${corrections.length} correção(ões) aplicadas. Carregue em "Analisar" para recalcular quando desejar.`);
+
+    if (btn) {
+        btn.innerHTML = '<i class="bi bi-check2-all me-1"></i>Aplicadas!';
+        setTimeout(() => {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }, 1500);
+    }
 }
 
 
@@ -477,4 +482,15 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+function useSuggestedExample() {
+    const el = document.getElementById('suggestedExample');
+    if (!el) return;
+    const example = el.textContent || el.innerText || '';
+    const input = document.getElementById('inputPhrase');
+    if (input) {
+        input.value = example;
+        autoResize();
+    }
 }
