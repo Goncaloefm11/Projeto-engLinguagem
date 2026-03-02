@@ -261,7 +261,7 @@ class LL1Analyzer:
         """Suggest a fix for FIRST/FIRST conflicts (usually left factoring)"""
         # Check if productions share a common prefix
         if len(productions) < 2:
-            return "Verifique as produções manualmente.", ""
+            return "Verifique as produções manualmente.", "", ""
         
         bodies = [p.body for p in productions]
         
@@ -292,13 +292,11 @@ class LL1Analyzer:
             )
             example = self._generate_example_from_grammar_text(corrected_grammar)
             return suggestion, corrected_grammar, example
+
         # Try to expand leading non-terminals to reveal hidden common prefixes
         expanded_bodies = self._expand_conflict_bodies(terminal, productions)
 
-        # Special-case: if each conflicting production can be expanded and all
-        # expansions (one representative per original production) are identical,
-        # then the productions are effectively equivalent and we can suggest
-        # simplifying to a single production (or inlining the non-terminal).
+        # Special-case logic for simplifications
         try_same = []
         all_expandable = True
         for prod in productions:
@@ -306,19 +304,15 @@ class LL1Analyzer:
             if not exps:
                 all_expandable = False
                 break
-            # take first expansion as representative
             try_same.append(tuple(exps[0]))
 
         if all_expandable and len(try_same) >= 2 and len(set(try_same)) == 1:
-            # All productions expand to the same body -> suggest simplification
             rep_body = list(try_same[0])
             if rep_body:
                 suffix_str = " ".join(str(s) for s in rep_body)
             else:
                 suffix_str = 'ε'
 
-            # Build corrected grammar: remove the conflicting productions and
-            # add a single production nt -> rep_body
             removed = productions
             lines = [str(p) for p in self.grammar.productions if p not in removed]
             lines.append(f"{nt} → {suffix_str}")
@@ -332,6 +326,7 @@ class LL1Analyzer:
             )
             example = self._generate_example_from_grammar_text(corrected_grammar)
             return suggestion, corrected_grammar, example
+
         if expanded_bodies:
             common_prefix = self._find_common_prefix(expanded_bodies)
             if common_prefix:
@@ -352,7 +347,9 @@ class LL1Analyzer:
                     f"  {nt} → {prefix_str} {new_nt}\n"
                     f"  {new_nt} → <sufixos diferentes>"
                 )
-                return suggestion, corrected_grammar
+                example = self._generate_example_from_grammar_text(corrected_grammar)
+                return suggestion, corrected_grammar, example
+
         suggestion = (
             f"Sugestão: As produções para {nt} têm ambiguidade.\n"
             f"Considere reestruturar a gramática para eliminar a ambiguidade, "

@@ -6,15 +6,9 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from core.grammar import GrammarParser, EPSILON, END_MARKER
 from core.ll1_analyzer import LL1Analyzer
-<<<<<<< HEAD
-from core.parser_generator import RecursiveDescentGenerator  # TableDrivenGenerator removido
-from core.derivation_tree import build_derivation_tree
-# from core.visitor import TreeVisitor  # Funcionalidade removida
-=======
 from core.parser_generator import RecursiveDescentGenerator, TableDrivenGenerator
 from core.derivation_tree import build_derivation_tree
 from core.visitor import TreeVisitor
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
 
 # ==========================================
 # GRAMÁTICAS DE TESTE
@@ -151,12 +145,6 @@ def test_05_generate_recursive_descent_parser():
     assert "def parse_a(self)" in python_code.lower(), "Deve conter a função de parse para o símbolo A."
 
 
-<<<<<<< HEAD
-# def test_06_generate_table_driven_parser():
-#     """Testa a geração do parser dirigido por tabela[cite: 12]."""
-#     # FUNCIONALIDADE REMOVIDA
-#     pass
-=======
 def test_06_generate_table_driven_parser():
     """Testa a geração do parser dirigido por tabela[cite: 12]."""
     grammar = GrammarParser.parse(GRAMMAR_LL1)
@@ -168,7 +156,6 @@ def test_06_generate_table_driven_parser():
     
     assert "PARSE_TABLE" in python_code, "O código deve exportar a tabela LL(1)."
     assert "TableDrivenParser" in python_code, "O código deve conter a classe do parser por tabela."
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
 
 
 def test_07_build_derivation_tree_outputs():
@@ -185,14 +172,6 @@ def test_07_build_derivation_tree_outputs():
     assert "id" in result["tree_text"], "A árvore textual deve conter o terminal 'id'."
 
 
-<<<<<<< HEAD
-# def test_08_visitor_code_generation():
-#     """Testa a base da função de visita para geração de código.
-#     Nota: Isto testa a infraestrutura interna simulando o que farás na Web.
-#     """
-#     # FUNCIONALIDADE REMOVIDA
-#     pass
-=======
 def test_08_visitor_code_generation():
     """Testa a base da função de visita para geração de código.
     Nota: Isto testa a infraestrutura interna simulando o que farás na Web.
@@ -241,7 +220,6 @@ class MyVisitor:
     
     # Validar se o Visitor processou a árvore e alterou a string conforme a regra de "T"
     assert "VAR(id)" in generated_code, "A função de visita do utilizador falhou a gerar o código customizado."
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
 
 def test_01_meta_grammar_strict_parsing():
     """Prova que a meta-gramática rejeita sintaxe inválida e aceita a correta."""
@@ -301,28 +279,9 @@ def test_03_conflict_detection_and_suggestions():
     assert len(c2) > 0, "Deve reportar pelo menos um conflito FIRST/FOLLOW."
     assert "anulável" in c2[0].description, "A justificação do erro tem de mencionar produções anuláveis[cite: 23]."
 
-<<<<<<< HEAD
-# def test_04_parser_generators():
-#     """Garante que os dois tipos de parser são gerados com sucesso[cite: 11, 12]."""
-#     # FUNCIONALIDADE REMOVIDA - Apenas Recursivo Descendente está disponível
-#     print("A testar geração do parser Recursivo Descendente...")
-#     grammar = GrammarParser.parse(PASCAL_SUBSET)
-#     analyzer = LL1Analyzer(grammar)
-#     analyzer.analyze()
-#     
-#     # Parser Recursivo Descendente [cite: 11]
-#     rd_gen = RecursiveDescentGenerator(grammar, analyzer)
-#     rd_code = rd_gen.generate("python")
-#     assert "def parse_stmtlist_prime" in rd_code.lower() or "def parse_stmtlist" in rd_code.lower(), "Métodos de parse devem ser criados."
-
-def test_04_parser_generators():
-    """Garante que o parser recursivo descendente é gerado com sucesso[cite: 11]."""
-    print("A testar geração do parser Recursivo Descendente...")
-=======
 def test_04_parser_generators():
     """Garante que os dois tipos de parser são gerados com sucesso[cite: 11, 12]."""
     print("A testar geração dos parsers (Recursivo e Tabela)...")
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
     grammar = GrammarParser.parse(PASCAL_SUBSET)
     analyzer = LL1Analyzer(grammar)
     analyzer.analyze()
@@ -331,14 +290,11 @@ def test_04_parser_generators():
     rd_gen = RecursiveDescentGenerator(grammar, analyzer)
     rd_code = rd_gen.generate("python")
     assert "def parse_stmtlist_prime" in rd_code.lower() or "def parse_stmtlist" in rd_code.lower(), "Métodos de parse devem ser criados."
-<<<<<<< HEAD
-=======
     
     # Parser Top-Down por Tabela [cite: 12]
     td_gen = TableDrivenGenerator(grammar, analyzer)
     td_code = td_gen.generate("python")
     assert "PARSE_TABLE =" in td_code or "PARSE_TABLE:" in td_code, "A tabela de parsing deve estar injetada no código gerado."
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
 
 def test_05_derivation_tree_and_formats():
     """Verifica se a árvore de derivação é gerada nos formatos textual e gráfico."""
@@ -358,12 +314,6 @@ def test_05_derivation_tree_and_formats():
     assert "tree_mermaid" in result and "graph TD" in result["tree_mermaid"], "Árvore Mermaid (gráfica) inválida/ausente."
     assert "tree_d3" in result and "name" in result["tree_d3"], "Árvore D3 (JSON) inválida/ausente."
 
-<<<<<<< HEAD
-# def test_06_visitor_pattern_execution():
-#     """Testa complexo da introdução de funções de visita para geração de código."""
-#     # FUNCIONALIDADE REMOVIDA
-#     pass
-=======
 def test_06_visitor_pattern_execution():
     """Testa complexo da introdução de funções de visita para geração de código."""
     print("A testar Padrão Visitor para Geração de Código...")
@@ -404,7 +354,6 @@ class MyVisitor(TreeVisitor):
     # Como o generic_visit junta tudo (ex: "id + number"), a string final deve conter a formatação exigida
     assert "ATRIBUIÇÃO" in generated_code, "O Visitor devia ter formatado a saída."
     assert "=" in generated_code, "O Visitor falhou a processar os filhos corretamente."
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
 
 if __name__ == "__main__":
     print("A iniciar testes da Fase 1...")
@@ -413,23 +362,13 @@ if __name__ == "__main__":
     test_03_detect_first_first_conflict()
     test_04_detect_first_follow_conflict()
     test_05_generate_recursive_descent_parser()
-<<<<<<< HEAD
-    # test_06_generate_table_driven_parser()  # REMOVIDO
-    test_07_build_derivation_tree_outputs()
-    # test_08_visitor_code_generation()  # REMOVIDO
-=======
     test_06_generate_table_driven_parser()
     test_07_build_derivation_tree_outputs()
     test_08_visitor_code_generation()
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
     test_01_meta_grammar_strict_parsing()
     test_02_pascal_ll1_properties()
     test_03_conflict_detection_and_suggestions()
     test_04_parser_generators()
     test_05_derivation_tree_and_formats()
-<<<<<<< HEAD
-    # test_06_visitor_pattern_execution()  # REMOVIDO
-=======
     test_06_visitor_pattern_execution()
->>>>>>> 471ce97c969b4e1f163af8bd848fc2141dc1185b
     print("✅ TODOS OS TESTES PASSARAM!")
