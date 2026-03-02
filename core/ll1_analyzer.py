@@ -238,13 +238,22 @@ class LL1Analyzer:
             )
             suggestion, corrected_grammar, example = self._suggest_first_follow_fix(nt, productions)
         else:
-            # FIRST/FIRST conflict
+            # FIRST/FIRST
             conflict_type = "FIRST/FIRST"
+            
+            # Cálculo de k (lookahead necessário)
+            bodies = [p.body for p in productions]
+            common_prefix = self._find_common_prefix(bodies)
+            k_needed = len(common_prefix) + 1
+            
             description = (
-                f"Conflito FIRST/FIRST para {nt} com terminal '{terminal}': "
-                f"múltiplas produções começam com símbolos que derivam '{terminal}'."
+                f"Conflito FIRST/FIRST para {nt} com terminal '{terminal}'. "
+                f"Esta regra requer lookahead LL({k_needed}) para ser resolvida."
             )
             suggestion, corrected_grammar, example = self._suggest_first_first_fix(nt, terminal, productions)
+            
+            if k_needed > 1:
+                suggestion = f"Sugestão: Fatoração à esquerda necessária (k={k_needed}). " + suggestion
         
         return Conflict(
             type=conflict_type,
