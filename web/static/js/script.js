@@ -201,6 +201,29 @@ function displayAnalysisResult(data) {
     
     container.innerHTML = html;
     buildLL1Table(report);
+
+    /*
+    // If any conflict requires LL(K) (K>1), inform the user in the grammar textarea
+    if (report.conflicts && report.conflicts.length > 0) {
+        const requires = report.conflicts.filter(c => c.type && c.type.indexOf('REQUIRES_LL') !== -1);
+        if (requires.length > 0) {
+            // Determine the maximum K requested (if multiple conflicts)
+            const ks = requires.map(c => {
+                const m = c.type.match(/REQUIRES_LL\((\d+)\)/);
+                return m ? parseInt(m[1], 10) : null;
+            }).filter(x => x !== null);
+            const maxK = ks.length ? Math.max(...ks) : null;
+            const grammarInput = document.getElementById('grammarInput');
+            const msg = maxK
+                ? `Atenção: esta gramática exige LL(K) com K = ${maxK}. Por favor refaça a gramática para que seja compatível com LL(1).`
+                : 'Atenção: esta gramática não é compatível com LL(1). Por favor refaça a gramática para que seja compatível com LL(1).';
+            if (grammarInput) {
+                grammarInput.value = msg;
+                autoResize();
+            }
+        }
+    }
+    */
 }
 
 function buildLL1Table(report) {
