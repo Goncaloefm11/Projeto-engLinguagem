@@ -10,6 +10,63 @@ from .grammar import Grammar, Symbol, Production, EPSILON, END_MARKER, SymbolTyp
 from .ll1_analyzer import LL1Analyzer
 
 
+def _escape_mermaid_label(label: str) -> str:
+    """Escape special characters that break Mermaid syntax.
+    
+    Mermaid 11.13.0 has issues with [ ] in labels - they're interpreted as subgraph syntax.
+    We use HTML entities to escape them safely.
+    """
+    label = str(label)
+    label = label.replace('[', '&#91;')  # [ → &#91;
+    label = label.replace(']', '&#93;')  # ] → &#93;
+    label = label.replace('"', "'")      # " → '
+    return label
+
+
+def tree_to_mermaid(tree) -> str:
+    """
+    Converte a árvore de tuplos para formato Mermaid. 
+    Garante que símbolos como [ ] , e ' não quebram o diagrama.
+    """
+    lines = ["graph TD"]
+    counter = [0]
+
+    def visit(node, parent_id=None):
+        node_id = f"n{counter[0]}"
+        counter[0] += 1
+        
+        if isinstance(node, tuple):
+            # Nó Não-Terminal: usa o primeiro elemento como nome
+            label = _escape_mermaid_label(str(node[0]))
+            lines.append(f'    {node_id}("{label}")')
+            
+            if parent_id:
+                lines.append(f'    {parent_id} --> {node_id}')
+            
+            # Visita os filhos
+            for child in node[1:]:
+                visit(child, node_id)
+        else:
+            # Nó Terminal (string): retângulo verde
+            label = _escape_mermaid_label(str(node))
+            lines.append(f'    {node_id}["{label}"]')
+            lines.append(f'    style {node_id} fill:#dcfce7,stroke:#166534')
+            
+            if parent_id:
+                lines.append(f'    {parent_id} --> {node_id}')
+
+    visit(tree)
+    return "\n".join(lines)
+
+def tree_to_text(tree, indent=0) -> str:
+    """Converte a árvore de tuplos para texto indentado. """
+    if isinstance(tree, tuple):
+        result = "  " * indent + str(tree[0]) + "\n"
+        for child in tree[1:]:
+            result += tree_to_text(child, indent + 1)
+        return result
+    return "  " * indent + f"'{tree}'\n"
+
 @dataclass
 class Token:
     """Represents a token from the input"""
@@ -19,7 +76,6 @@ class Token:
     
     def __repr__(self):
         return f"Token({self.type}, {self.value!r})"
-
 
 @dataclass
 class TreeNode:
@@ -35,97 +91,34 @@ class TreeNode:
     def add_child(self, child: "TreeNode"):
         self.children.append(child)
     
-    def to_text(self, indent: int = 0, prefix: str = "") -> str:
-        """Convert tree to text representation"""
-        lines = []
-        connector = "├── " if prefix else ""
-        end_connector = "└── " if prefix else ""
-        
-        if self.is_terminal():
-            if self.token:
-                lines.append(f"{prefix}{self.symbol}: '{self.token.value}'")
-            else:
-                lines.append(f"{prefix}{self.symbol}")
-        else:
-            lines.append(f"{prefix}{self.symbol}")
-        
-        for i, child in enumerate(self.children):
-            is_last = (i == len(self.children) - 1)
-            new_prefix = prefix + ("    " if not prefix else ("    " if is_last else "│   "))
-            child_connector = "└── " if is_last else "├── "
-            
-            child_text = child.to_text(indent + 1, "")
-            lines.append(f"{prefix}{child_connector}{child_text.strip()}")
-        
-        return "\n".join(lines)
-    
-    def to_simple_text(self, indent: int = 0) -> str:
-        """Simple indented text representation"""
-        result = "  " * indent + self.symbol
-        if self.token:
-            result += f" ('{self.token.value}')"
-        result += "\n"
-        for child in self.children:
-            result += child.to_simple_text(indent + 1)
-        return result
-    
-    def to_dict(self) -> dict:
-        """Convert tree to dictionary for JSON serialization"""
-        result = {
-            "symbol": self.symbol,
-            "isTerminal": self.is_terminal(),
-            "children": [child.to_dict() for child in self.children]
-        }
-        if self.token:
-            result["value"] = self.token.value
-        if self.production_index is not None:
-            result["production"] = self.production_index
-        return result
-    
     def to_mermaid(self) -> str:
-        """Convert tree to Mermaid diagram format"""
+        """Converte o objeto TreeNode para Mermaid"""
         lines = ["graph TD"]
         node_counter = [0]
         
-        def add_node(node: "TreeNode", parent_id: Optional[str] = None) -> str:
+        def add_node(node: "TreeNode", parent_id: Optional[str] = None):
             node_id = f"N{node_counter[0]}"
             node_counter[0] += 1
             
+            label = node.symbol
+            if node.token:
+                label = f"{node.symbol}: {node.token.value}"
+            
+            label = _escape_mermaid_label(label)
             if node.is_terminal():
-                if node.token:
-                    label = f'{node.symbol}: "{node.token.value}"'
-                else:
-                    label = node.symbol
                 lines.append(f'    {node_id}["{label}"]')
                 lines.append(f'    style {node_id} fill:#90EE90')
             else:
-                lines.append(f'    {node_id}(("{node.symbol}"))')
+                lines.append(f'    {node_id}(("{label}"))')
             
             if parent_id:
                 lines.append(f'    {parent_id} --> {node_id}')
             
             for child in node.children:
                 add_node(child, node_id)
-            
-            return node_id
-        
+
         add_node(self)
         return "\n".join(lines)
-    
-    def to_d3_json(self) -> str:
-        """Convert tree to D3.js hierarchical format"""
-        def convert(node: "TreeNode") -> dict:
-            result = {"name": node.symbol}
-            if node.token:
-                result["value"] = node.token.value
-                result["type"] = "terminal"
-            else:
-                result["type"] = "nonterminal"
-            if node.children:
-                result["children"] = [convert(child) for child in node.children]
-            return result
-        
-        return json.dumps(convert(self), indent=2)
 
 
 class SimpleTokenizer:

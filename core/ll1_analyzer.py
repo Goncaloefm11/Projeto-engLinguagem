@@ -213,11 +213,27 @@ class LL1Analyzer:
         self._detect_conflicts()
     
     def _detect_conflicts(self):
-        """Detect and categorize LL(1) conflicts"""
+        """Detect and categorize LL(1) conflicts.
+        Priority: LEFT-RECURSION → other conflicts (to avoid masking).
+        """
+        left_recursion_conflicts: List[Conflict] = []
+        other_conflicts: List[Conflict] = []
+        seen_nts_left_rec: Set[Symbol] = set()
+        
         for (nt, terminal), productions in self.ll1_table.table.items():
             if len(productions) > 1:
-                conflict = self._categorize_conflict(nt, terminal, productions)
-                self.ll1_table.conflicts.append(conflict)
+                # Check for left recursion first (report once per non-terminal)
+                left_recursive_prods = self._get_left_recursive_productions(nt)
+                if left_recursive_prods and nt not in seen_nts_left_rec:
+                    conflict = self._categorize_left_recursion(nt, left_recursive_prods)
+                    left_recursion_conflicts.append(conflict)
+                    seen_nts_left_rec.add(nt)
+                elif not left_recursive_prods:
+                    conflict = self._categorize_conflict(nt, terminal, productions)
+                    other_conflicts.append(conflict)
+        
+        # LEFT-RECURSION conflicts reported first, so not masked by FIRST/FOLLOW analysis
+        self.ll1_table.conflicts = left_recursion_conflicts + other_conflicts
     
     def _categorize_conflict(self, nt: Symbol, terminal: Symbol, 
                             productions: List[Production]) -> Conflict:
@@ -231,9 +247,10 @@ class LL1Analyzer:
             # FIRST/FOLLOW conflict
             conflict_type = "FIRST/FOLLOW"
             description = (
-                f"Conflito FIRST/FOLLOW para {nt} com terminal '{terminal}'. "
-                f"Explicação: FIRST({nt}) e FOLLOW({nt}) intersectam — isto é, um terminal aparece tanto em FIRST de uma produção quanto em FOLLOW de {nt}. "
-                f"A produção anulável {nullable_prods[0]} conflita com {non_nullable_prods[0]} pela presença de '{terminal}'."
+                f"Conflito FIRST/FOLLOW para {nt} com terminal '{terminal}': "
+                f"a produção anulável {nullable_prods[0]} conflita com "
+                f"a produção {non_nullable_prods[0]} porque '{terminal}' está "
+                f"em FOLLOW({nt}) e também em FIRST da outra produção."
             )
             suggestion, corrected_grammar, example = self._suggest_first_follow_fix(nt, productions)
         else:
@@ -244,23 +261,15 @@ class LL1Analyzer:
             bodies = [p.body for p in productions]
             common_prefix = self._find_common_prefix(bodies)
             k_needed = len(common_prefix) + 1
-
-            # If the minimal required lookahead is > 1, do NOT produce automatic suggestions.
-            # Instead mark the conflict as requiring LL(k) and provide a short message.
+            
+            description = (
+                f"Conflito FIRST/FIRST para {nt} com terminal '{terminal}'. "
+                f"Esta regra requer lookahead LL({k_needed}) para ser resolvida."
+            )
+            suggestion, corrected_grammar, example = self._suggest_first_first_fix(nt, terminal, productions)
+            
             if k_needed > 1:
-                conflict_type = f"REQUIRES_LL({k_needed})"
-                description = (
-                    f"Gramática impossível de resolver com LL(1). Experimente LL(K) onde K = {k_needed}."
-                )
-                suggestion = ""
-                corrected_grammar = ""
-                example = ""
-            else:
-                description = (
-                    f"Conflito FIRST/FIRST para {nt} com terminal '{terminal}'. "
-                    f"Explicação: duas produções começam pelo mesmo terminal ou prefixo terminal — o analisador não consegue decidir com um único símbolo de lookahead."
-                )
-                suggestion, corrected_grammar, example = self._suggest_first_first_fix(nt, terminal, productions)
+                suggestion = f"Sugestão: Fatoração à esquerda necessária (k={k_needed}). " + suggestion
         
         return Conflict(
             type=conflict_type,
@@ -273,34 +282,143 @@ class LL1Analyzer:
             example_sentence=(example if 'example' in locals() else "")
         )
     
-    def _suggest_first_first_fix(self, nt: Symbol, terminal: Symbol, productions: List[Production]) -> Tuple[str, str, str]:
-        """Suggest a fix for FIRST/FIRST conflicts (usually left factoring).
-
-        Returns a tuple (suggestion_text, corrected_grammar_text, example_sentence).
-        The suggestion text focuses on actionable steps (no explanatory prefix).
+    def _get_left_recursive_productions(self, nt: Symbol) -> List[Production]:
+        """Get all productions of a non-terminal that have immediate left recursion"""
+        left_recursive = []
+        for prod in self.grammar.get_productions_for(nt):
+            if self._is_immediately_left_recursive(prod):
+                left_recursive.append(prod)
+        return left_recursive
+    
+    def _is_immediately_left_recursive(self, prod: Production) -> bool:
+        """Check if a production has immediate left recursion (A → A ...)"""
+        if not prod.body:
+            return False
+        return prod.body[0] == prod.head
+    
+    def _categorize_left_recursion(self, nt: Symbol, 
+                                   left_recursive_prods: List[Production]) -> Conflict:
+        """Categorize a left recursion conflict"""
+        non_recursive_prods = [p for p in self.grammar.get_productions_for(nt) 
+                              if not self._is_immediately_left_recursive(p)]
+        
+        description = (
+            f"Recursividade à esquerda imediata detectada para {nt}: "
+            f"as produções {left_recursive_prods} têm {nt} como primeiro símbolo."
+        )
+        
+        suggestion, corrected_grammar, example = self._suggest_left_recursion_fix(
+            nt, 
+            left_recursive_prods, 
+            non_recursive_prods
+        )
+        
+        return Conflict(
+            type="LEFT-RECURSION",
+            non_terminal=nt,
+            terminal=Symbol("(none)", SymbolType.TERMINAL),  # No specific terminal
+            productions=left_recursive_prods,
+            description=description,
+            suggestion=suggestion,
+            corrected_grammar=corrected_grammar,
+            example_sentence=example
+        )
+    
+    def _suggest_left_recursion_fix(self, nt: Symbol, left_recursive_prods: List[Production],
+                                   non_recursive_prods: List[Production]) -> Tuple[str, str, str]:
+        """Suggest elimination of immediate left recursion using standard transformation.
+        
+        Transforms: A → α A | β
+        Into:       A → β A'
+                   A' → α A' | ε
         """
-        # If fewer than 2 productions, nothing to suggest automatically
+        if not left_recursive_prods or not non_recursive_prods:
+            return "Verifique as produções manualmente.", "", ""
+        
+        # Collect the left-recursive suffixes (α) and base cases (β)
+        left_rec_suffixes = []  # Bodies after removing the leading non-terminal
+        base_cases = non_recursive_prods  # Non-recursive productions
+        
+        for prod in left_recursive_prods:
+            # prod.body[0] == nt, so suffix is body[1:]
+            suffix = prod.body[1:]
+            left_rec_suffixes.append(suffix)
+        
+        # Create new non-terminal for the right recursion
+        new_nt = Symbol(f"{nt}'", SymbolType.NON_TERMINAL)
+        
+        # Build corrected grammar
+        lines = []
+        
+        # Add all productions not involved in left recursion
+        for prod in self.grammar.productions:
+            if prod.head != nt:
+                lines.append(str(prod))
+        
+        # Add the transformed productions: A → β A' | γ A' | ...
+        for base_prod in base_cases:
+            body_str = " ".join(str(s) for s in base_prod.body) if base_prod.body else "ε"
+            if body_str == "ε":
+                lines.append(f"{nt} → {new_nt}")
+            else:
+                lines.append(f"{nt} → {body_str} {new_nt}")
+        
+        # Add the right-recursive productions: A' → α A' | ε
+        for suffix in left_rec_suffixes:
+            if suffix:
+                suffix_str = " ".join(str(s) for s in suffix)
+                lines.append(f"{new_nt} → {suffix_str} {new_nt}")
+            else:
+                # If suffix is empty, just A' → A'
+                lines.append(f"{new_nt} → {new_nt}")
+        
+        # Always add epsilon production to A' to allow termination
+        lines.append(f"{new_nt} → ε")
+        
+        corrected_grammar = "\n".join(lines)
+        
+        suggestion = (
+            f"Sugestão: Eliminação de recursividade à esquerda\n"
+            f"A gramática tem recursividade imediata à esquerda para {nt}.\n"
+            f"\n"
+            f"Transformação padrão (LL(1) compatível):\n"
+            f"Seja {nt} → α {nt} | β\n"
+            f"Transforme para:\n"
+            f"  {nt} → β {new_nt}\n"
+            f"  {new_nt} → α {new_nt} | ε\n"
+            f"\n"
+            f"Isto elimina a recursividade à esquerda preservando a linguagem gerada."
+        )
+        
+        example = self._generate_example_from_grammar_text(corrected_grammar)
+        return suggestion, corrected_grammar, example
+    
+    def _suggest_first_first_fix(self, nt: Symbol, terminal: Symbol, productions: List[Production]) -> Tuple[str, str, str]:
+        """Suggest a fix for FIRST/FIRST conflicts (usually left factoring)"""
+        # Check if productions share a common prefix
         if len(productions) < 2:
             return "Verifique as produções manualmente.", "", ""
-
+        
         bodies = [p.body for p in productions]
-
-        # Find common prefix among bodies
-        common_prefix: List[Symbol] = []
+        
+        # Find common prefix
+        common_prefix = []
         min_len = min(len(b) for b in bodies)
+        
         for i in range(min_len):
             symbols_at_i = {b[i] for b in bodies}
             if len(symbols_at_i) == 1:
                 common_prefix.append(bodies[0][i])
             else:
                 break
-
+        
         if common_prefix:
             prefix_str = " ".join(str(s) for s in common_prefix)
             new_nt = f"{nt}'"
-
+            
+            # Build corrected grammar
             corrected_grammar = self._build_left_factored_grammar(nt, productions, common_prefix, new_nt)
-
+            
             suggestion = (
                 f"Sugestão: Fatoração à esquerda\n"
                 f"As produções compartilham o prefixo comum '{prefix_str}'.\n"
@@ -308,14 +426,13 @@ class LL1Analyzer:
                 f"  {nt} → {prefix_str} {new_nt}\n"
                 f"  {new_nt} → <sufixos diferentes>"
             )
-            corrected_grammar = self._group_production_alternatives(corrected_grammar)
             example = self._generate_example_from_grammar_text(corrected_grammar)
             return suggestion, corrected_grammar, example
 
         # Try to expand leading non-terminals to reveal hidden common prefixes
         expanded_bodies = self._expand_conflict_bodies(terminal, productions)
 
-        # Special-case: if all expansions lead to the same body, suggest simplification
+        # Special-case logic for simplifications
         try_same = []
         all_expandable = True
         for prod in productions:
@@ -327,20 +444,22 @@ class LL1Analyzer:
 
         if all_expandable and len(try_same) >= 2 and len(set(try_same)) == 1:
             rep_body = list(try_same[0])
-            suffix_str = " ".join(str(s) for s in rep_body) if rep_body else 'ε'
+            if rep_body:
+                suffix_str = " ".join(str(s) for s in rep_body)
+            else:
+                suffix_str = 'ε'
 
             removed = productions
             lines = [str(p) for p in self.grammar.productions if p not in removed]
-            lines.append(f"{nt} → {suffix_str}") 
+            lines.append(f"{nt} → {suffix_str}")
             corrected_grammar = "\n".join(lines)
 
             suggestion = (
                 f"Sugestão: Simplificação\n"
-                f"As produções que geram conflito para {nt} derivam no mesmo prefixo '{suffix_str}'.\n"
+                f"As produções conflitantes para {nt} derivam efetivamente o mesmo prefixo '{suffix_str}'. "
                 f"Considere simplificar para uma produção única:\n  {nt} → {suffix_str}\n"
                 f"ou remover a produção redundante (manter apenas uma fonte de '{suffix_str}')."
             )
-            corrected_grammar = self._group_production_alternatives(corrected_grammar)
             example = self._generate_example_from_grammar_text(corrected_grammar)
             return suggestion, corrected_grammar, example
 
@@ -358,18 +477,19 @@ class LL1Analyzer:
                 )
                 suggestion = (
                     f"Sugestão: Expansão + fatoração à esquerda\n"
-                    f"Após expandir o prefixo para revelar '{terminal}', as produções passam a partilhar o prefixo '{prefix_str}'.\n"
+                    f"Após expandir o prefixo para revelar '{terminal}', "
+                    f"as produções passam a partilhar o prefixo '{prefix_str}'.\n"
                     f"Use:\n"
                     f"  {nt} → {prefix_str} {new_nt}\n"
                     f"  {new_nt} → <sufixos diferentes>"
                 )
-                corrected_grammar = self._group_production_alternatives(corrected_grammar)
                 example = self._generate_example_from_grammar_text(corrected_grammar)
                 return suggestion, corrected_grammar, example
 
         suggestion = (
             f"Sugestão: As produções para {nt} têm ambiguidade.\n"
-            f"Considere reestruturar a gramática para eliminar a ambiguidade, ou usar uma gramática diferente que seja LL(1) compatível."
+            f"Considere reestruturar a gramática para eliminar a ambiguidade, "
+            f"ou use uma gramática diferente que seja LL(1) compatível."
         )
         return suggestion, "", ""
 
@@ -472,24 +592,27 @@ class LL1Analyzer:
         return "\n".join(lines)
     
     def _suggest_first_follow_fix(self, nt: Symbol, productions: List[Production]) -> Tuple[str, str, str]:
-        """Suggest a fix for FIRST/FOLLOW conflicts"""
-        nullable = [p for p in productions if p.is_epsilon_production() or 
-                   all(s in self.nullable for s in p.body)]
+        """Suggest a fix for generic FIRST/FOLLOW conflicts.
         
-        # For FIRST/FOLLOW conflicts, prefer removing nullable productions only
-        corrected_grammar = self._build_grammar_without_productions(nullable)
-        
+        For academic correctness, generic FIRST/FOLLOW conflicts are NOT auto-correctable
+        because removing nullable productions can silently change the target language.
+        Only list patterns with specific structure may provide safe corrections.
+        """
         suggestion = (
-            f"Sugestão:\n"
+            f"Sugestão: Reformulação da Produção Anulável\n"
             f"A produção anulável significa que {nt} pode derivar ε.\n"
-            f"Os terminais que seguem {nt} (FOLLOW) conflitam com FIRST de outra produção.\n"
-            f"Experimente colocar outro símbolo terminal no início de uma produção, "
-            f"remover a produção ε se possível, ou reestruturar a gramática para evitar que "
-            f"terminais apareçam tanto em FIRST quanto em FOLLOW."
+            f"Existe interseção entre FIRST e FOLLOW para {nt}, o que gera conflito LL(1).\n"
+            f"\n"
+            f"Reestruture a gramática para separar claramente os contextos em que {nt} é anulável,\n"
+            f"evitando que o mesmo terminal apareça simultaneamente em FIRST e FOLLOW.\n"
+            f"\n"
+            f"Exemplos de reestruturação:\n"
+            f"  - Use produção intermediária para contextualizar a anulabilidade\n"
+            f"  - Elimine a anulação se não for essencial à linguagem-alvo"
         )
-        corrected_grammar = self._group_production_alternatives(corrected_grammar)
-        example = self._generate_example_from_grammar_text(corrected_grammar)
-        return suggestion, corrected_grammar, example
+        # For safety, return empty corrected_grammar for generic FIRST/FOLLOW
+        # (not auto-correctable without domain knowledge)
+        return suggestion, "", ""
     
     def _build_left_factored_grammar(self, nt: Symbol, conflict_prods: List[Production], 
                                      common_prefix: List[Symbol], new_nt_name: str) -> str:
@@ -525,49 +648,6 @@ class LL1Analyzer:
                 lines.append(str(prod))
         
         return "\n".join(lines)
-
-    def _group_production_alternatives(self, grammar_text: str) -> str:
-        """Group productions with the same head into a single line using ' | '.
-        Example: "B → a\nB → b" -> "B → a | b"""
-        if not grammar_text or not grammar_text.strip():
-            return grammar_text
-
-        lines = [ln.strip() for ln in grammar_text.splitlines() if ln.strip()]
-        groups = {}
-        for ln in lines:
-            if '→' in ln:
-                head, rhs = ln.split('→', 1)
-            elif '->' in ln:
-                head, rhs = ln.split('->', 1)
-            else:
-                # keep unknown lines as-is
-                continue
-            head = head.strip()
-            rhs = rhs.strip()
-            groups.setdefault(head, []).append(rhs)
-
-        # Preserve head order according to the original grammar when possible.
-        # Build head order from self.grammar.productions (first appearance wins).
-        head_order = []
-        if hasattr(self, 'grammar') and self.grammar and getattr(self.grammar, 'productions', None):
-            for prod in self.grammar.productions:
-                head_name = str(prod.head)
-                if head_name not in head_order:
-                    head_order.append(head_name)
-
-        # Append any heads found in groups but not in grammar.productions in their encountered order
-        for head in groups.keys():
-            if head not in head_order:
-                head_order.append(head)
-
-        out_lines = []
-        for head in head_order:
-            if head in groups:
-                rhss = groups[head]
-                # Keep the alternatives in the order they were encountered
-                out_lines.append(f"{head} → {' | '.join(rhss)}")
-
-        return "\n".join(out_lines)
 
 
     def _generate_example_from_grammar_text(self, grammar_text: str, max_depth: int = 6) -> str:
@@ -686,7 +766,7 @@ class LL1Analyzer:
                     "productions": [str(p) for p in c.productions],
                     "description": c.description,
                     "suggestion": c.suggestion,
-                    "corrected_grammar": self._group_production_alternatives(c.corrected_grammar),
+                    "corrected_grammar": c.corrected_grammar,
                     "example_sentence": getattr(c, 'example_sentence', '')
                 }
                 for c in self.ll1_table.conflicts

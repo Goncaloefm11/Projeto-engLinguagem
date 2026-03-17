@@ -163,10 +163,19 @@ function displayAnalysisResult(data) {
     `;
     
     if (report.conflicts && report.conflicts.length > 0) {
+        const anyHasCorrections = report.conflicts.some(c => {
+            const hasCorrection = c.corrected_grammar && c.corrected_grammar.trim() !== '';
+            const isRequiresLL = c.type && c.type.indexOf('REQUIRES_LL') !== -1;
+            return hasCorrection && !isRequiresLL;
+        });
+
+        const applyAllButtonClass = anyHasCorrections ? 'btn-warning' : 'btn-secondary';
+        const applyAllButtonDisabled = anyHasCorrections ? '' : 'disabled';
+
         html += `
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
                 <h6 class="text-danger mb-0"><i class="bi bi-shield-exclamation me-2"></i>Conflitos Detetados e Sugestões:</h6>
-                <button class="btn btn-warning btn-sm" onclick="applyAllSuggestions(event)">
+                <button class="btn ${applyAllButtonClass} btn-sm" onclick="applyAllSuggestions(event)" ${applyAllButtonDisabled}>
                     <i class="bi bi-check-all me-1"></i>Aplicar Todas as Sugestões
                 </button>
             </div>
@@ -174,13 +183,15 @@ function displayAnalysisResult(data) {
         
         report.conflicts.forEach((c, index) => {
             const hasCorrection = c.corrected_grammar && c.corrected_grammar.trim() !== '';
+            const isRequiresLL = c.type && c.type.indexOf('REQUIRES_LL') !== -1;
+            const canApply = hasCorrection && !isRequiresLL;
             html += `
                 <div class="alert conflict-alert shadow-sm">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
                             <h6 class="text-danger fw-bold">${c.type}</h6>
                         </div>
-                        ${hasCorrection ? `
+                        ${canApply ? `
                             <button class="btn btn-sm btn-success" onclick="applySuggestion(event, ${index})" title="Aplicar esta sugestão">
                                 <i class="bi bi-check-circle me-1"></i>Aplicar
                             </button>
@@ -190,7 +201,7 @@ function displayAnalysisResult(data) {
                     <hr>
                     <p class="mb-1 fw-bold"><i class="bi bi-lightbulb-fill text-warning me-1"></i> Sugestão do Sistema:</p>
                     <pre class="mb-0 bg-white p-2 border rounded" style="font-size: 13px;">${c.suggestion}</pre>
-                    ${hasCorrection ? `
+                    ${canApply ? `
                         <p class="mt-3 mb-1 fw-bold"><i class="bi bi-pencil-square me-1"></i> Gramática sugerida:</p>
                         <pre class="mb-0 bg-white p-2 border rounded" style="font-size: 13px;">${c.corrected_grammar}</pre>
                     ` : ''}
@@ -473,8 +484,12 @@ async function applyAllSuggestions(ev) {
 
     const grammarInput = document.getElementById('grammarInput');
 
-    // Collect all conflicts that provide an automatic corrected grammar
-    const corrections = currentAnalysisReport.conflicts.filter(c => c.corrected_grammar && c.corrected_grammar.trim() !== '');
+    // Collect only actionable corrections (exclude REQUIRES_LL and empty corrections)
+    const corrections = currentAnalysisReport.conflicts.filter(c => {
+        const hasCorrection = c.corrected_grammar && c.corrected_grammar.trim() !== '';
+        const isRequiresLL = c.type && c.type.indexOf('REQUIRES_LL') !== -1;
+        return hasCorrection && !isRequiresLL;
+    });
     if (corrections.length === 0) {
         alert('Nenhuma correção automática disponível para os conflitos encontrados.');
         if (btn) {
