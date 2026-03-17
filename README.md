@@ -3,6 +3,16 @@
 Projeto de Engenharia de Linguagens, 2.º semestre de 2026.
 
 A Grammar Playground é uma aplicação web para trabalhar com gramáticas independentes de contexto com foco em LL(1). O sistema permite:
+O sistema cumpre todos os requisitos exigidos no guião:
+- ✅ **Meta-Gramática Formal:** Análise estrita de gramáticas de input usando um parser formal (EBNF), rejeitando sintaxes inválidas.
+- ✅ **Conceitos LL(1):** Cálculo automático de produções anuláveis (ε) e conjuntos `FIRST` e `FOLLOW`.
+- ✅ **Tabela LL(1) e Deteção de Conflitos:** Construção da tabela de parsing e identificação de conflitos `FIRST/FIRST` e `FIRST/FOLLOW`.
+- ✅ **Sugestão de Correções:** O sistema analisa a origem do conflito e sugere soluções (ex: Fatoração à esquerda).
+- ✅ **Geração de Parsers:** Geração do código fonte (em Python e JavaScript) para Parsers **Recursivos Descendentes**.
+- ✅ **Árvores de Derivação:** Análise de frases de input com geração de árvore de derivação em formato Textual, JSON e Gráfico (usando Mermaid.js).
+- ⬜ **Geração de Parsers:** Geração do código fonte (em Python ) para Parsers **Recursivos Top-Down**. 
+- ⬜ **Geração de Código (Visitor):** Injeção dinâmica de funções de visita em código Python via interface Web para travessia da árvore e geração de resultados/código.
+---
 
 - validar gramáticas escritas pelo utilizador;
 - calcular `NULLABLE`, `FIRST` e `FOLLOW`;
