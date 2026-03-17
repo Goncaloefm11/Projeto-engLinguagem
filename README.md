@@ -11,7 +11,7 @@ O sistema cumpre todos os requisitos exigidos no guião:
 - ✅ **Sugestão de Correções:** O sistema analisa a origem do conflito e sugere soluções (ex: Fatoração à esquerda).
 - ✅ **Geração de Parsers:** Geração do código fonte (em Python e JavaScript) para Parsers **Recursivos Descendentes**.
 - ✅ **Árvores de Derivação:** Análise de frases de input com geração de árvore de derivação em formato Textual, JSON e Gráfico (usando Mermaid.js).
-- ⬜ **Geração de Parsers:** Geração do código fonte (em Python e JavaScript) para Parsers **Recursivos Top-Down**. 
+- ⬜ **Geração de Parsers:** Geração do código fonte (em Python ) para Parsers **Recursivos Top-Down**. 
 - ⬜ **Geração de Código (Visitor):** Injeção dinâmica de funções de visita em código Python via interface Web para travessia da árvore e geração de resultados/código.
 ---
 
