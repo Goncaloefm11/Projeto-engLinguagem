@@ -21,9 +21,9 @@
         <div class="container">
             <div class="hero-card">
                 <div>
-                    <h1 class="hero-title">Ambiente LL(1) para Analise e Geracao</h1>
+                    <h1 class="hero-title">Ambiente LL(1) para Análise e Geração</h1>
                     <p class="hero-subtitle">
-                        Analise conflitos, gere parsers e explore arvores de derivacao numa so interface.
+                        Análise conflitos, gere parsers e explora árvores de derivacao numa só interface.
                     </p>
                 </div>
                 <div class="hero-meta">
@@ -73,26 +73,6 @@
                     </div>
                 </div>
             </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-cpu me-2"></i>Geracao de Parser
-                </div>
-                <div class="card-body">
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <label for="parserLanguage" class="form-label">Linguagem</label>
-                            <select id="parserLanguage" class="form-select">
-                                <option value="python">Python</option>
-                                <!-- <option value="javascript">JavaScript</option> -->
-                            </select>
-                        </div>
-                    </div>
-                    <button class="btn btn-outline-primary mt-3" onclick="generateParser()">
-                        Gerar Parser (Recursivo Descendente)
-                    </button>
-                </div>
-            </div>
         </section>
 
         <section class="results">
@@ -103,19 +83,19 @@
                 <div class="card-body">
                     <ul class="nav nav-tabs" id="resultTabs" role="tablist">
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#analysisTab" role="tab">Analise</a>
+                            <a class="nav-link active" data-bs-toggle="tab" href="#analysisTab" role="tab">Análise</a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" data-bs-toggle="tab" href="#tableTab" role="tab">Tabela LL(1)</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#treeTab" role="tab">Arvore</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#treeTab" role="tab">Árvore</a>
                         </li>
                         <li class="nav-item" role="presentation">
                             <a class="nav-link" data-bs-toggle="tab" href="#stepsTab" role="tab">Passos</a>
                         </li>
                         <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#codeTab" role="tab">Codigo</a>
+                            <a class="nav-link" data-bs-toggle="tab" href="#codeTab" role="tab">Parser Recursivo Descendente</a>
                         </li>
                     </ul>
 

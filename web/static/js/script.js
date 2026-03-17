@@ -282,6 +282,7 @@ async function parseInput() {
     const input = document.getElementById('inputPhrase').value;
     const spinner = document.getElementById('parseSpinner');
     spinner.style.display = 'inline-block';
+    generateParser(false);
     
     try {
         const response = await fetch('/parse', {
@@ -373,9 +374,8 @@ function displayParseResult(data) {
     new bootstrap.Tab(treeTab).show();
 }
 
-async function generateParser() {
+async function generateParser(showTab = true) {
     const grammar = document.getElementById('grammarInput').value;
-    const language = document.getElementById('parserLanguage').value;
     
     try {
         const response = await fetch('/generate-parser', {
@@ -384,18 +384,20 @@ async function generateParser() {
             body: JSON.stringify({
                 grammar: grammar,
                 type: 'recursive',
-                language: language
+                language: 'python'
             })
         });
         
         const data = await response.json();
-        displayCodeResult(data);
+        displayCodeResult(data, showTab);
     } catch (error) {
-        alert('Erro ao gerar: ' + error.message);
+        if (showTab) {
+            alert('Erro ao gerar: ' + error.message);
+        }
     }
 }
 
-function displayCodeResult(data) {
+function displayCodeResult(data, showTab = true) {
     const container = document.getElementById('codeResult');
     
     if (!data.success) {
@@ -407,14 +409,16 @@ function displayCodeResult(data) {
         container.innerHTML = `
             <h6 class="text-white mb-3">
                 <i class="bi bi-file-code me-2"></i>
-                Código Fonte Gerado (Descendente Recursivo) - ${data.language}
+                Código Fonte Gerado (Descendente Recursivo em Python)
             </h6>
             <pre><code class="language-${data.language}">${escapeHtml(data.code)}</code></pre>
         `;
     }
     
-    const codeTab = document.querySelector('a[href="#codeTab"]');
-    new bootstrap.Tab(codeTab).show();
+    if (showTab) {
+        const codeTab = document.querySelector('a[href="#codeTab"]');
+        new bootstrap.Tab(codeTab).show();
+    }
 }
 
 function copyCode() {
