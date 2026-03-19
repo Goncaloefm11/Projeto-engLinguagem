@@ -37,13 +37,13 @@ GElem -> Entrada
         | Ref 
 Ref -> AREF ListaAtrib '/' '>'""",
 
-"arithmetic": """E → T E'
-E' → + T E' 
+"arithmetic": """E -> T E'
+E' -> + T E' 
     | ε
-T → F T'
-T' → * F T' 
+T -> F T'
+T' -> * F T' 
     | ε
-F → ( E )  
+F -> ( E )  
     | id 
     | number"""
 }
