@@ -2,133 +2,219 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title>Grammar Playground</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <title>Grammar Playground - GP</title>
+    <style>
+        /* Estilos base */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 0; font-size: 14px; opacity: 0.8; }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Layout de Formulário */
+        .flex-row { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 10px; }
+        .flex-grow { flex-grow: 1; }
+        textarea { width: 100%; height: 180px; font-family: 'Fira Code', monospace; padding: 15px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: monospace; }
+        
+        /* Secções e Tabelas */
+        .section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: white; }
+    th, td { border: 1px solid #dfe6e9; padding: 12px; text-align: center; }
+    th { background-color: #34495e; color: white; }
+        
+        /* Botões e Alertas */
+        button { background-color: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #219150; }
+        .error-box { background-color: #fab1a0; color: #c0392b; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #e17055; }
+        .conflito-list { color: #d63031; font-weight: bold; }
+        
+        /* Área do Parser Gerado */
+        .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
+        
+        /* Árvore de Derivação */
+        #arvore-canvas { width: 100%; height: 500px; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; overflow: auto; margin-top: 10px; }
+        .node circle { fill: #3498db; stroke: #fff; stroke-width: 2px; }
+        .node text { font-size: 12px; font-weight: bold; }
+        .link { fill: none; stroke: #ccc; stroke-width: 2px; }
+    </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg shadow-sm py-3">
-        <div class="container">
-            <a class="navbar-brand text-white fw-bold" href="#">Grammar Playground</a>
-            <span class="text-white-50 small">Projeto de Engenharia de Linguagens · 2º Semestre 2026</span>
-        </div>
-    </nav>
 
-    <header class="hero">
-        <div class="container">
-            <div class="hero-card">
+    <div class="header">
+        <h1>Grammar Playground (GP)</h1>
+        <p>Projeto de Engenharia de Linguagens · 2º Semestre 2026</p>
+    </div>
+
+    <div class="container">
+        <form method="POST" id="mainForm">
+            <div class="flex-row">
+                <div class="flex-grow">
+                    <label><strong>Gramática (Formato: NT -> prod1 | prod2):</strong></label>
+                </div>
                 <div>
-                    <h1 class="hero-title">Ambiente LL(1) para Análise e Geração</h1>
-                    <p class="hero-subtitle">
-                        Análise conflitos, gere parsers e explora árvores de derivacao numa só interface.
-                    </p>
-                </div>
-                <div class="hero-meta">
-                    <div class="meta-pill">FIRST/FOLLOW</div>
-                    <div class="meta-pill">LL(1) Table</div>
-                    <div class="meta-pill">Derivation Tree</div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="container main-grid">
-        <section class="inputs">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span><i class="bi bi-journal-code me-2"></i>Gramatica</span>
-                    <button class="btn btn-primary btn-sm" onclick="analyzeGrammar()">
-                        <span id="analyzeSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
-                        Analisar
-                    </button>
-                </div>
-                <div class="card-body">
-                    <label for="exampleSelect" class="form-label">Exemplos</label>
-                    <select id="exampleSelect" class="form-select mb-3">
-                        <option value="">Seleciona um exemplo</option>
-                        {% for key in examples.keys() %}
-                        <option value="{{ key }}">{{ key }}</option>
+                    <label>Exemplos:</label>
+                    <select id="exemploSelect" onchange="carregarExemplo()" style="padding: 5px; border-radius: 4px;">
+                        <option value="">-- Selecionar --</option>
+                        {% for nome in exemplos %}
+                            <option value="{{ nome }}">{{ nome }}</option>
                         {% endfor %}
                     </select>
-
-                    <label for="grammarInput" class="form-label">Gramatica (formato custom)</label>
-                    <textarea id="grammarInput" class="form-control grammar-input" rows="10" placeholder="S → A B&#10;A → a | ε&#10;B → b"></textarea>
                 </div>
             </div>
+            
+            <textarea name="gramatica" id="gramaticaTexto" placeholder="Ex: S -> A B...">{{ gramatica_texto }}</textarea>
+            
+            <div style="margin-top: 20px;">
+                <label><strong>Frase de Entrada (para a Árvore):</strong></label>
+                <input type="text" name="frase" value="{{ frase_entrada }}" placeholder="Ex: id : number">
+                <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
+            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-terminal me-2"></i>Frase de Entrada
-                </div>
-                <div class="card-body">
-                    <textarea id="inputPhrase" class="form-control" rows="4" placeholder="id := number + id"></textarea>
-                    <div class="d-flex gap-2 mt-3">
-                        <button class="btn btn-success" onclick="parseInput()">
-                            <span id="parseSpinner" class="spinner-border spinner-border-sm me-2" style="display:none"></span>
-                            Analisar Frase
-                        </button>
+            <button type="submit">Analisar Tudo</button>
+        </form>
+
+        {% if resultado %}
+            {% if resultado.erro %}
+                <div class="section">
+                    <div class="error-box">
+                        <strong>Erro detetado:</strong> {{ resultado.erro }}
                     </div>
                 </div>
-            </div>
-        </section>
+            {% endif %}
 
-        <section class="results">
-            <div class="card">
-                <div class="card-header">
-                    <i class="bi bi-diagram-3 me-2"></i>Resultados
-                </div>
-                <div class="card-body">
-                    <ul class="nav nav-tabs" id="resultTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link active" data-bs-toggle="tab" href="#analysisTab" role="tab">Análise</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#tableTab" role="tab">Tabela LL(1)</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#treeTab" role="tab">Árvore</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#stepsTab" role="tab">Passos</a>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" href="#codeTab" role="tab">Parser Recursivo Descendente</a>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content pt-3">
-                        <div class="tab-pane fade show active" id="analysisTab" role="tabpanel">
-                            <div id="analysisResult" class="empty-state">Analisa uma gramatica para ver o relatorio.</div>
-                        </div>
-                        <div class="tab-pane fade" id="tableTab" role="tabpanel">
-                            <div class="table-container" id="ll1TableResult">
-                                <div class="empty-state">A tabela LL(1) aparece aqui.</div>
+            {% if resultado.gramatica %}
+                <div class="section">
+                    <h3>Relatório de Conflitos LL(1)</h3>
+                    {% if resultado.conflitos %}
+                        <ul class="conflito-list">
+                            {% for c in resultado.conflitos %} <li>{{ c }}</li> {% endfor %}
+                        </ul>
+                        {% if sugestao %}
+                        <div style="margin-top:10px;">
+                            <button id="btnSugestao" type="button" style="background-color:#e67e22">Sugerir Correções</button>
+                            <div id="sugestaoBox" style="display:none; margin-top:12px; padding:12px; border-radius:6px; background:#fff7ec; border:1px solid #f0c27b;">
+                                <h4 style="margin-top:0;">Sugestão de Gramática</h4>
+                                <pre id="sugestaoTexto" style="white-space:pre-wrap; font-family: monospace; background:transparent; border:none; padding:0;">{{ sugestao.texto_novo }}</pre>
+                                <p style="margin-bottom:6px;"><strong>Alterações propostas:</strong></p>
+                                <ul>
+                                    {% for a in sugestao.alteracoes %}
+                                        {% if a %}<li>{{ a }}</li>{% endif %}
+                                    {% endfor %}
+                                </ul>
+                                <div style="margin-top:8px; display:flex; gap:8px;">
+                                    <button id="btnAplicarSugestao" type="button" style="background-color:#16a085">Aplicar</button>
+                                    <button id="btnFecharSugestao" type="button" style="background-color:#bdc3c7; color:#2c3e50">Fechar</button>
+                                </div>
                             </div>
                         </div>
-                        <div class="tab-pane fade" id="treeTab" role="tabpanel">
-                            <div id="treeResult" class="tree-container">A arvore de derivacao aparece aqui.</div>
-                        </div>
-                        <div class="tab-pane fade" id="stepsTab" role="tabpanel">
-                            <div id="stepsResult" class="empty-state">Os passos de derivacao aparecem aqui.</div>
-                        </div>
-                        <div class="tab-pane fade" id="codeTab" role="tabpanel">
-                            <div id="codeResult" class="code-output">O codigo gerado aparece aqui.</div>
-                        </div>
-                    </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function(){
+                                var btn = document.getElementById('btnSugestao');
+                                if (!btn) return;
+                                var box = document.getElementById('sugestaoBox');
+                                btn.addEventListener('click', function(){
+                                    box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+                                });
+                                    var btnAplicar = document.getElementById('btnAplicarSugestao');
+                                    var btnFechar = document.getElementById('btnFecharSugestao');
+                                    var sugestaoPre = document.getElementById('sugestaoTexto');
+                                    var textarea = document.getElementById('gramaticaTexto');
+                                    if (btnAplicar && sugestaoPre && textarea) {
+                                        btnAplicar.addEventListener('click', function(){
+                                            // Copia o texto da sugestão para a textarea e foca
+                                            textarea.value = sugestaoPre.innerText.trim();
+                                            textarea.focus();
+                                            // Fecha a caixa de sugestão
+                                            box.style.display = 'none';
+                                        });
+                                    }
+                                    if (btnFechar) {
+                                        btnFechar.addEventListener('click', function(){ box.style.display = 'none'; });
+                                    }
+                            });
+                        </script>
+                        {% endif %}
+                    {% else %}
+                        <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
+                    {% endif %}
                 </div>
-            </div>
-        </section>
-    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+                <div class="section">
+                    <h3>Tabela de Parsing LL(1)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NT \ Terminal</th>
+                                {% for t in resultado.gramatica.terminais %} <th>{{ t }}</th> {% endfor %}
+                                <th>$</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for nt, derivacoes in resultado.tabela.items() %}
+                            <tr>
+                                <td><strong>{{ nt }}</strong></td>
+                                {% for t in resultado.gramatica.terminais %}
+                                    <td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td>
+                                {% endfor %}
+                                <td>{{ ' '.join(derivacoes.get('$', ['-'])) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if resultado.arvore %}
+                <div class="section">
+                    <h3>Árvore de Derivação</h3>
+                    <div id="arvore-canvas"></div>
+                </div>
+                {% endif %}
+
+                {% if codigo_parser %}
+                <div class="section">
+                    <h3>Parser Recursivo Descendente Gerado</h3>
+                    <textarea readonly class="parser-code">{{ codigo_parser }}</textarea>
+                    <p style="font-size: 12px;">Podes copiar este código para um ficheiro .py e testar com um Lexer.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        const examples = {{ examples | tojson | safe }};
-    </script>
+        // Lógica dos Exemplos
+        const exemplos = {{ exemplos|tojson }};
+        function carregarExemplo() {
+            const val = document.getElementById('exemploSelect').value;
+            if (val && exemplos[val]) {
+                document.getElementById('gramaticaTexto').value = exemplos[val];
+            }
+        }
 
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+        // Desenho da Árvore com D3.js
+        {% if resultado and resultado.arvore %}
+        const treeData = {{ resultado.arvore|tojson }};
+        const width = 900, height = 500;
+        
+        const svg = d3.select("#arvore-canvas").append("svg")
+            .attr("width", width).attr("height", height)
+            .append("g").attr("transform", "translate(50,50)");
+
+        const tree = d3.tree().size([height - 100, width - 200]);
+        const root = d3.hierarchy(treeData);
+        tree(root);
+
+        svg.selectAll(".link").data(root.links()).enter().append("path")
+            .attr("class", "link").attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+        const node = svg.selectAll(".node").data(root.descendants()).enter().append("g")
+            .attr("transform", d => `translate(${d.y},${d.x})`);
+
+        node.append("circle").attr("r", 6).style("fill", d => d.children ? "#3498db" : "#2ecc71");
+        node.append("text").attr("dy", -10).attr("x", 0).style("text-anchor", "middle").text(d => d.data.name);
+        {% endif %}
+    </script>
 </body>
 </html>

@@ -1,232 +1,107 @@
-from flask import Flask, render_template, request, jsonify
-import os
+from flask import Flask, render_template, request
 import sys
+import os
 
+# Adiciona a pasta raiz ao path para conseguirmos importar o 'core'
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Add parent directory to path for imports
-# sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from core.grammar import Grammar, GrammarParser
-from core.ll1_analyzer import LL1Analyzer
-from core.parser_generator import RecursiveDescentGenerator
-from core.derivation_tree import DerivationTreeBuilder, build_derivation_tree
-
+from core.loader import carregar_gramatica_da_string
+from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'grammar-playground-secret-key')
 
+# No topo do web/app.py, define os exemplos
+EXEMPLOS = {
+    "simples": "S -> A B\nA -> a | ε\nB -> b | c",
+    "pascal_sub": "Program -> StmtList\nStmtList -> Stmt StmtList_P\nStmtList_P -> Stmt StmtList_P | ε\nStmt -> id : Expr\nExpr -> Term Expr_P\nExpr_P -> + Term Expr_P | ε\nTerm -> id | number",
+    "agenda": """Agenda -> DeclXML AAGENDA Lista FAGENDA
+DeclXML -> DCA ListaAtrib DCF
+ListaAtrib -> Atrib ListaAtrib
+        |
+Atrib -> id '=' vatrib
+Lista -> Elem Lista
+        |  
+Elem -> Entrada
+        | Grupo
+Entrada -> AENTRADA ListaAtrib '>' Nome EntradaCont
+EntradaCont -> Telefone FENTRADA
+        | Email Telefone FENTRADA
+Nome -> ANOME string FNOME
+Email -> AEMAIL string FEMAIL
+Telefone -> ATELEFONE string FTELEFONE
+Grupo -> AGRUPO ListaAtrib '>' GLista FGRUPO
+GLista -> GElem GLista
+        | 
+GElem -> Entrada
+        | Grupo
+        | Ref 
+Ref -> AREF ListaAtrib '/' '>'""",
 
-# Example grammars
-EXAMPLE_GRAMMARS = {
-    "pascal_subset": """Program → StmtList
-StmtList → Stmt StmtList'
-StmtList' → ; Stmt StmtList' | ε
-Stmt → id := Expr
-Expr → Term Expr'
-Expr' → + Term Expr' | ε
-Term → id | number""",
-    
-    "arithmetic": """E → T E'
-E' → + T E' | ε
+"arithmetic": """E → T E'
+E' → + T E' 
+    | ε
 T → F T'
-T' → * F T' | ε
-F → ( E ) | id | number""",
-    
-    "simple": """S → A B
-A → a | ε
-B → b | c"""
+T' → * F T' 
+    | ε
+F → ( E )  
+    | id 
+    | number"""
 }
 
-
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    """Main page with grammar input"""
-    return render_template('index.html', examples=EXAMPLE_GRAMMARS)
-
-
-@app.route('/analyze', methods=['POST'])
-def analyze():
-    """Analyze a grammar and return LL(1) analysis results"""
-    data = request.get_json()
-    grammar_text = data.get('grammar', '')
+    resultado = None
+    gramatica_texto = ""
+    frase_entrada = ""
+    codigo_parser = ""
+    sugestao = None
     
-    if not grammar_text.strip():
-        return jsonify({
-            'success': False,
-            'error': 'No grammar provided'
-        })
-    
-    try:
-        grammar = GrammarParser.parse(grammar_text)
-        validation_errors = grammar.validate()
+    if request.method == 'POST':
+        gramatica_texto = request.form.get('gramatica', "")
+        frase_entrada = request.form.get('frase', "")
         
-        if validation_errors:
-            return jsonify({
-                'success': False,
-                'error': 'Grammar validation errors',
-                'details': validation_errors
-            })
-        
-        analyzer = LL1Analyzer(grammar)
-        report = analyzer.get_analysis_report()
-        
-        return jsonify({
-            'success': True,
-            'report': report
-        })
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
+        try:
+            g = carregar_gramatica_da_string(gramatica_texto)
+            f = calcular_first(g)
+            fol = calcular_follow(g, f)
+            tab, conf = gerar_tabela_ll1(g, f, fol)
+            _, conflitos = gerar_tabela_ll1(g,f,fol)
+            if conflitos:
+                from core.refactor import propor_correcoes
+                sugestao = propor_correcoes(g)
+            
+            from core.generator import gerar_codigo_parser
+            codigo_parser = gerar_codigo_parser(g, tab)
+            
+            resultado = {
+                'gramatica': g, 'tabela': tab, 'conflitos': conf, 'arvore': None
+            }
 
+            # Se o utilizador escreveu uma frase, tentamos gerar a árvore
+            if frase_entrada.strip():
+                # Tokenização simples: separa por espaços
+                tokens_lista = []
+                for t in frase_entrada.split():
+                    if t.isdigit():
+                        tipo = 'number'
+                    else:
+                        tipo = t
+                    tokens_lista.append({'type': tipo, 'value': tipo})
+                
+                # Chamamos a função que criámos anteriormente
+                from core.parser_LL1 import gerar_arvore_derivacao
+                resultado['arvore'] = gerar_arvore_derivacao(tokens_lista, g, tab)
 
-@app.route('/generate-parser', methods=['POST'])
-def generate_parser():
-    """Generate parser code from grammar"""
-    data = request.get_json()
-    grammar_text = data.get('grammar', '')
-    language = data.get('language', 'python')
-    
-    if not grammar_text.strip():
-        return jsonify({
-            'success': False,
-            'error': 'No grammar provided'
-        })
-    
-    try:
-        grammar = GrammarParser.parse(grammar_text)
-        validation_errors = grammar.validate()
-        
-        if validation_errors:
-            return jsonify({
-                'success': False,
-                'error': 'Grammar validation errors',
-                'details': validation_errors
-            })
-        
-        analyzer = LL1Analyzer(grammar)
-        analyzer.analyze()
-        
-        if analyzer.ll1_table.has_conflicts():
-            return jsonify({
-                'success': False,
-                'error': 'Grammar has LL(1) conflicts. Cannot generate parser.',
-                'conflicts': [
-                    {
-                        'type': c.type,
-                        'description': c.description,
-                        'suggestion': c.suggestion
-                    }
-                    for c in analyzer.ll1_table.conflicts
-                ]
-            })
-        
-        generator = RecursiveDescentGenerator(grammar, analyzer)
-        code = generator.generate(language)
-        
-        return jsonify({
-            'success': True,
-            'code': code,
-            'type': 'recursive',
-            'language': language
-        })
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
+        except Exception as e:
+            resultado = {'erro': str(e)}
 
-
-@app.route('/parse', methods=['POST'])
-def parse_input():
-    """Parse input text using the grammar"""
-    data = request.get_json()
-    grammar_text = data.get('grammar', '')
-    input_text = data.get('input', '')
-    
-    if not grammar_text.strip():
-        return jsonify({
-            'success': False,
-            'error': 'No grammar provided'
-        })
-    
-    if not input_text.strip():
-        return jsonify({
-            'success': False,
-            'error': 'No input provided'
-        })
-    
-    try:
-        result = build_derivation_tree(grammar_text, input_text)
-        # If parse failed, try to generate a simple example sentence from a suggested correction
-        if not result.get('success'):
-            try:
-                grammar = GrammarParser.parse(grammar_text)
-                analyzer = LL1Analyzer(grammar)
-                # Ensure analysis is run to populate conflicts
-                analyzer.analyze()
-
-                # Prefer example from the first conflict that has a corrected grammar
-                suggested_example = ""
-                for c in analyzer.ll1_table.conflicts:
-                    if getattr(c, 'corrected_grammar', None):
-                        example = analyzer._generate_example_from_grammar_text(c.corrected_grammar)
-                        if example:
-                            suggested_example = example
-                            break
-
-                # Fallback: example for the current grammar
-                if not suggested_example:
-                    suggested_example = analyzer._generate_example_from_grammar_text(grammar_text)
-
-                # Attach suggested example to result
-                result['suggested_example'] = suggested_example
-            except Exception:
-                # If anything fails, don't block the parse response
-                result['suggested_example'] = ""
-
-        return jsonify(result)
-    
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        })
-
-
-@app.route('/examples')
-def get_examples():
-    """Return available example grammars"""
-    return jsonify(EXAMPLE_GRAMMARS)
-
-
-@app.route('/api/grammar/validate', methods=['POST'])
-def validate_grammar():
-    """Validate grammar syntax"""
-    data = request.get_json()
-    grammar_text = data.get('grammar', '')
-    
-    try:
-        grammar = GrammarParser.parse(grammar_text)
-        errors = grammar.validate()
-        
-        return jsonify({
-            'valid': len(errors) == 0,
-            'errors': errors,
-            'terminals': [str(t) for t in grammar.terminals],
-            'non_terminals': [str(nt) for nt in grammar.non_terminals],
-            'start_symbol': str(grammar.start_symbol) if grammar.start_symbol else None,
-            'num_productions': len(grammar.productions)
-        })
-    
-    except Exception as e:
-        return jsonify({
-            'valid': False,
-            'errors': [str(e)]
-        })
+    return render_template('index.html', 
+                           resultado=resultado, 
+                           gramatica_texto=gramatica_texto, 
+                           frase_entrada=frase_entrada,
+                           exemplos=EXEMPLOS,
+                           codigo_parser=codigo_parser,
+                           sugestao=sugestao)
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True)

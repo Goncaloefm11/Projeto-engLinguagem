@@ -1,376 +1,108 @@
-# Grammar Playground
+# Grammar Playground (Projeto de Engenharia de Linguagens)
 
-Projeto de Engenharia de Linguagens, 2.º semestre de 2026.
+Resumo rápido
 
-A Grammar Playground é uma aplicação web para trabalhar com gramáticas independentes de contexto com foco em LL(1). O sistema permite:
-O sistema cumpre todos os requisitos exigidos no guião:
-- ✅ **Meta-Gramática Formal:** Análise estrita de gramáticas de input usando um parser formal (EBNF), rejeitando sintaxes inválidas.
-- ✅ **Conceitos LL(1):** Cálculo automático de produções anuláveis (ε) e conjuntos `FIRST` e `FOLLOW`.
-- ✅ **Tabela LL(1) e Deteção de Conflitos:** Construção da tabela de parsing e identificação de conflitos `FIRST/FIRST` e `FIRST/FOLLOW`.
-- ✅ **Sugestão de Correções:** O sistema analisa a origem do conflito e sugere soluções (ex: Fatoração à esquerda).
-- ✅ **Geração de Parsers:** Geração do código fonte (em Python e JavaScript) para Parsers **Recursivos Descendentes**.
-- ✅ **Árvores de Derivação:** Análise de frases de input com geração de árvore de derivação em formato Textual, JSON e Gráfico (usando Mermaid.js).
-- ⬜ **Geração de Parsers:** Geração do código fonte (em Python ) para Parsers **Recursivos Top-Down**. 
-- ⬜ **Geração de Código (Visitor):** Injeção dinâmica de funções de visita em código Python via interface Web para travessia da árvore e geração de resultados/código.
----
+Este repositório serve como um "playground" para especificar gramáticas e analisar propriedades LL(1). Foi desenvolvido um front-end simples (Flask) onde o utilizador pode colar uma gramática (formato `NT -> prod1 | prod2`), calcular FIRST/FOLLOW, gerar a tabela LL(1), obter sugestões de correção para conflitos e tentar parsear uma frase de entrada (gerar a árvore de derivação).
 
-- validar gramáticas escritas pelo utilizador;
-- calcular `NULLABLE`, `FIRST` e `FOLLOW`;
-- construir a tabela LL(1);
-- detetar e classificar conflitos;
-- sugerir correções para alguns conflitos;
-- gerar parser descendente recursivo em Python;
-- testar frases de entrada e visualizar a árvore de derivação.
+Estado atual (o que já está feito)
 
-## Estado Atual
+- Interface web (Flask) em `web/app.py` com templates em `web/templates/index.html`:
+  - formulário para colar gramática e frase de entrada.
+  - exibição da tabela LL(1), relatório de conflitos e árvore de derivação (desenhada com D3).
+  - botão "Sugerir Correções" que mostra uma gramática transformada (remoção de recursividade à esquerda e fatorização) e botão "Aplicar" para copiar a sugestão para a textarea.
 
-Neste momento, o backend já suporta:
+- Leitura e representação da gramática: `core/loader.py` lê a gramática textual para a estrutura interna (dicionário com `producoes`, `terminais`, `nao_terminais`, `inicial`).
 
-- parser formal da meta-gramática;
-- análise LL(1) completa;
-- deteção de conflitos `FIRST/FIRST`, `FIRST/FOLLOW` e `LEFT-RECURSION`;
-- geração de parser descendente recursivo em Python;
-- parsing de frases com construção de árvore usando Lark;
-- exportação textual, JSON, Mermaid e D3 da árvore;
-- API web em Flask.
+- Análise LL(1): `core/parser_LL1.py` implementa:
+  - `calcular_first(gramatica)` — calcula conjuntos FIRST.
+  - `calcular_follow(gramatica, firsts)` — calcula conjuntos FOLLOW.
+  - `gerar_tabela_ll1(gramatica, firsts, follows)` — constrói a tabela LL(1) e reporta conflitos (FIRST/FIRST, FIRST/FOLLOW).
+  - `gerar_arvore_derivacao(tokens, gramatica, tabela)` — parser orientado pela tabela que constrói a árvore de derivação (retorna `None` se a frase não for aceite).
+  - `validar_frase(tokens, gramatica, tabela)` — wrapper que tenta parse e devolve `(aceite, arvore|mensagem)`.
 
-Neste momento, o projeto não expõe na interface:
+- Sugeridor de correções: `core/refactor.py` contém rotinas básicas para remover recursividade à esquerda e fatorizar prefixos comuns, e uma função `propor_correcoes(gramatica)` que devolve sugestões de gramática textual.
 
-- geração de parser table-driven pela UI;
-- visitors gerados automaticamente;
-- ontologia OWL/RDF.
+- Geração de parser em código: `core/generator.py` (esqueleto) que gera código de parser recursivo descendente a partir da tabela.
 
-## Estrutura do Projeto
+Como executar a aplicação localmente
 
-```text
-Projeto-engLinguagem/
-├── core/
-│   ├── grammar.py
-│   ├── ll1_analyzer.py
-│   ├── parser_generator.py
-│   ├── derivation_tree.py
-│   ├── lark_parser.py
-│   └── visitor.py
-├── web/
-│   ├── app.py
-│   ├── templates/index.html
-│   └── static/js/script.js
-├── grammars/
-├── tests/
-├── run.py
-└── pyproject.toml
+1. Instalar dependências (o `pyproject.toml` já lista Flask e Lark; se quiseres um venv):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt  # se existir, ou pip install flask lark
 ```
 
-## Arquitetura
-
-O backend está dividido em duas camadas.
-
-- `web/`: camada HTTP e integração com a interface.
-- `core/`: lógica de compiladores e processamento das gramáticas.
-
-O fluxo principal é este:
-
-1. O frontend envia uma gramática ou uma frase para um endpoint Flask.
-2. O `web/app.py` chama os módulos do `core`.
-3. O `core/grammar.py` transforma texto em objetos `Grammar`, `Symbol` e `Production`.
-4. O `core/ll1_analyzer.py` calcula propriedades LL(1) e conflitos.
-5. Dependendo da funcionalidade, o backend:
-	- gera código Python com `core/parser_generator.py`, ou
-	- constrói uma árvore de derivação com `core/lark_parser.py`.
-6. O resultado é devolvido em JSON para a interface.
-
-## Backend: Funcionalidade por Módulo
-
-### `core/grammar.py`
-
-Este módulo implementa o modelo interno da gramática e o parser da meta-gramática.
-
-Responsabilidades principais:
-
-- definir os tipos de símbolo com `SymbolType`;
-- representar símbolos com a classe `Symbol`;
-- representar produções com a classe `Production`;
-- armazenar a gramática completa com a classe `Grammar`;
-- validar coerência estrutural da gramática;
-- converter texto introduzido pelo utilizador numa instância de `Grammar`.
-
-Como funciona o parsing da gramática:
-
-- aceita setas `→` e `->`;
-- aceita alternativas com `|`;
-- aceita epsilon como `ε`, `epsilon` ou `ɛ`;
-- identifica não-terminais a partir das cabeças das produções;
-- classifica como terminais símbolos em minúsculas, operadores e lexemas especiais;
-- define como símbolo inicial a cabeça da primeira produção.
-
-Validações feitas por `Grammar.validate()`:
-
-- existência de símbolo inicial;
-- existência de produções;
-- garantia de que cada não-terminal tem pelo menos uma produção;
-- garantia de que cabeças de produção são não-terminais;
-- verificação de que todos os símbolos usados estão definidos.
-
-### `core/ll1_analyzer.py`
-
-Este módulo implementa a análise LL(1).
-
-Estruturas principais:
-
-- `LL1Table`: tabela de parsing indexada por `(não-terminal, terminal)`;
-- `Conflict`: descrição estruturada de cada conflito detetado;
-- `LL1Analyzer`: motor principal da análise.
-
-Passos executados por `LL1Analyzer.analyze()`:
-
-1. calcula os símbolos anuláveis (`NULLABLE`);
-2. calcula os conjuntos `FIRST`;
-3. calcula os conjuntos `FOLLOW`;
-4. preenche a tabela LL(1);
-5. deteta conflitos.
-
-Tipos de conflito atualmente tratados:
-
-- `LEFT-RECURSION`: recursividade à esquerda imediata;
-- `FIRST/FIRST`: duas produções competem pelo mesmo lookahead;
-- `FIRST/FOLLOW`: uma produção anulável colide com o `FOLLOW` do mesmo não-terminal.
-
-Detalhes importantes do backend:
-
-- conflitos de recursividade à esquerda são reportados com prioridade para não ficarem mascarados por conflitos de tabela;
-- o analisador pode devolver sugestões textuais e, em alguns casos, uma gramática corrigida;
-- também pode gerar uma frase-exemplo a partir de uma gramática sugerida.
-
-Esta análise é usada por:
-
-- `/analyze`, para mostrar o relatório completo;
-- `/generate-parser`, para bloquear geração quando existem conflitos;
-- `/parse`, para tentar sugerir uma frase de exemplo quando o parsing falha.
-
-### `core/parser_generator.py`
-
-Este módulo gera código de parser a partir de uma gramática LL(1).
-
-#### `RecursiveDescentGenerator`
-
-O gerador produz um parser em Python:
-
-- estado global com `tokens` e `pos`;
-- funções auxiliares `lookahead()`, `match()` e `error()`;
-- uma função por não-terminal;
-- uma função `parse(input_tokens)` como ponto de entrada;
-- árvore sintática representada por tuplos aninhados.
-
-O despacho entre produções é gerado com base em `FIRST` e `FOLLOW`.
-
-#### `TableDrivenGenerator`
-
-# TODO.
-
-### `core/lark_parser.py`
-
-Este módulo é o backend principal da funcionalidade de parsing de frases.
-
-Responsabilidades:
-
-- converter a gramática interna para EBNF compatível com Lark;
-- criar um parser Lark a partir da gramática do utilizador;
-- fazer parse da frase de input;
-- converter a árvore do Lark para uma estrutura própria (`LarkTreeNode`);
-- exportar a árvore em vários formatos.
-
-#### `LarkGrammarConverter`
-
-Converte a gramática do utilizador para regras Lark.
-
-Faz, entre outras coisas:
-
-- sanitização de nomes de regras e terminais;
-- mapeamento de operadores como `:=`, `+`, `(`, `)` e `;`;
-- criação de regex para `id` e `number`;
-- inserção de `%ignore WS`.
-
-#### `LarkTreeBuilder`
-
-Executa o parse da frase e tenta criar um parser Lark:
-
-- primeiro com `lalr`;
-- em fallback com `earley`, caso a gramática não seja aceite no primeiro modo.
-
-#### `build_derivation_tree_lark()`
-
-É a função de alto nível usada pelo endpoint `/parse`.
-
-Devolve um dicionário com:
-
-- `success`
-- `errors`
-- `tree`
-- `tree_text`
-- `tree_mermaid`
-- `tree_d3`
-- `lark_grammar`
-- `derivation_steps`
-
-Nota: `derivation_steps` é devolvido vazio neste caminho, porque o Lark não fornece a derivação passo a passo neste formato.
-
-### `core/derivation_tree.py`
-
-Este módulo completa as árvores de derivação e a implementação LL(1) manual baseada em stack.
-
-Componentes principais:
-
-- `tree_to_mermaid(tree)`: converte árvores em tuplos para Mermaid;
-- `tree_to_text(tree)`: converte árvores em tuplos para texto indentado;
-- `SimpleTokenizer`: tokenizador simples baseado nos terminais da gramática;
-- `DerivationTreeBuilder`: parser LL(1) manual com pilha e construção explícita de árvore;
-- `TreeNode`: representação de nós para esse modo manual.
-O caminho usado pela rota web de parsing é o baseado em Lark.
-
-### `core/visitor.py`
-
-Este módulo define uma classe base `TreeVisitor` para percorrer árvores de derivação.
-
-Funcionamento:
-
-- tenta resolver dinamicamente um método como `visit_Expr` ou `visit_StmtList_prime`;
-- se esse método não existir, usa `generic_visit()`;
-- o comportamento por omissão percorre todos os filhos e concatena os resultados;
-- em folhas terminais, devolve o valor do token.
-
-Estado atual:
-
-- é uma infraestrutura base para extensões futuras;
-- não está integrada de forma explícita em nenhum endpoint Flask.
-
-## Backend HTTP: Endpoints
-
-### `GET /`
-
-Renderiza a página principal `index.html` e injeta exemplos de gramáticas.
-
-### `POST /analyze`
-
-Recebe JSON com:
-
-```json
-{ "grammar": "..." }
+2. Iniciar a app (a partir da pasta `web`):
+
+```bash
+cd web
+python3 app.py
 ```
 
-Fluxo interno:
+3. Abrir no browser: http://127.0.0.1:5000
 
-1. faz parse da gramática com `GrammarParser.parse()`;
-2. valida a estrutura com `grammar.validate()`;
-3. executa `LL1Analyzer`;
-4. devolve o relatório completo da análise.
+O que testar na UI
 
-Usado para mostrar:
+- Colar uma gramática simples e clicar "Analisar Tudo".
+- Se houver conflitos LL(1), aparecerá a lista de conflitos e o botão "Sugerir Correções".
+- Experimentar uma frase de entrada; o sistema tokeniza automaticamente (`1` -> `number`) conforme a gramática conter esses terminais.
+- Se a frase for aceite, a árvore de derivação é mostrada (os nós terminais ainda NÃO mostram `tipo : valor`, p.ex. `number : 1`).
 
-- terminais e não-terminais;
-- produções;
-- `NULLABLE`, `FIRST` e `FOLLOW`;
-- tabela LL(1);
-- conflitos e sugestões.
+Observações técnicas e limitações atuais
 
-### `POST /generate-parser`
+- O loader é minimal — assume que cada linha com `->` define produções; espaços e capitalização são significativos.
 
-Recebe JSON com:
+- Lexer simples:
+  - Reconhece inteiros e identificadores básicos. Floats e símbolos complexos podem precisar de regras adicionais.
+  - Mapeia `1` → `number` apenas se a gramática declarar `number` como terminal. Caso a gramática não declare `number`, o token será tratado como desconhecido e a UI avisará.
 
-```json
-{ "grammar": "...", "language": "python" }
-```
+- Parser/árvore:
+  - O parser orientado pela tabela assume que a tabela LL(1) está correta; se a gramática ou cálculo FIRST/FOLLOW tiver erros, o parser recusará a frase (com razão) MAS NAO DÁ ERRO ALGO QUE DEVE SER IMPLEMENTADO AINDA.
 
-Fluxo interno:
+- Sugeridor de correções (refactor): faz transformações automáticas simples (remoção recursividade à esquerda e fatorização) mas não garante versão final perfeita; casos complexos podem precisar de intervenção manual.
 
-1. faz parse e valida a gramática;
-2. corre a análise LL(1);
-3. bloqueia a geração se existirem conflitos;
-4. gera código com `RecursiveDescentGenerator`.
+O que falta / próximos passos (mapeado para o PDF / Etapa 1→seguinte)
 
-Resposta de sucesso:
+Abaixo listo funcionalidades/entregáveis que o PDF sugere e o estado atual (feito / parcial / falta):
 
-- `code`: código do parser gerado;
-- `type`: atualmente `recursive`;
-- `language`: linguagem pedida.
+1) Especificação manual da gramática de exemplo — FEITO.
 
-Observação:
+2) Cálculo FIRST/FOLLOW e tabela LL(1) manual — FEITO (implementado e exibido automaticamente).
 
-- embora o endpoint aceite o campo `language`, o gerador suporta apenas Python neste momento.
+3) Deteção de conflitos FIRST/FIRST e FIRST/FOLLOW — FEITO (a função `gerar_tabela_ll1` retorna conflitos que são mostrados na UI).
 
-### `POST /parse`
+4) Sugestões automáticas para tornar a gramática LL(1) (remoção recursividade / fatorização) — PARCIAL (implementado em `core/refactor.py`, mas carece de testes extensivos e de um mecanismo de validação pós-transformação mais robusto).
 
-Recebe JSON com:
+5) Parser que gera árvore de derivação a partir da tabela LL(1) — PARCIAL/FEITO (existe um parser orientado por tabela; verifica a aceitação e constrói a árvore, mas há cenários limites que podem precisar de logging e visualização adicional para debug). Testes com várias gramáticas serão úteis.FALTA O ENVIO DE ERRO DA FRASE DE ENTRADA PARA PRODUZIR A ARVORE
 
-```json
-{ "grammar": "...", "input": "..." }
-```
+6) Gerador de parser (código em Python) — FEITO?
+ (há um `core/generator.py` que produz um parser de exemplo; necessita de polimento e testes).
 
-Fluxo interno:
+7) Testes automatizados e cobertura — FALTA (sugerido: criar testes pytest para `calcular_first`, `calcular_follow`, `gerar_tabela_ll1` e casos de parsing). Está listado como dependência dev no `pyproject.toml`.
 
-1. chama `build_derivation_tree()`;
-2. esse wrapper delega para `build_derivation_tree_lark()`;
-3. em caso de sucesso, devolve árvore e formatos de visualização;
-4. em caso de falha, tenta ainda construir `suggested_example` usando o analisador LL(1).
+8) Documentação final e relatório por etapas — PARCIAL (este README + `docs/etapa1.md` cobrem parte; falta um documento que descreva o design global, a API dos módulos e como estender o lexer/gerador).
 
-O `suggested_example` segue esta lógica:
+Sugestões concretas para finalizar o projecto (curto prazo)
 
-- tenta usar primeiro uma gramática corrigida presente num conflito;
-- se isso não existir, tenta gerar um exemplo a partir da gramática original;
-- se alguma etapa falhar, devolve string vazia sem bloquear a resposta.
+  - Gramática sem conflitos (pequena), gramática com recursividade à esquerda, gramática com produções anuláveis.
+- Melhorar o lexer:
+  - Reconhecer floats, negativos, e mapear automaticamente `number` mesmo quando não declarado (opcional).
+  - Reconhecer operadores compostos (`:=`, `<=`, etc.).
+- Adicionar uma vista de "debug" (no template) que mostre:
+  - tokens gerados pelo lexer,
+  - FIRST/FOLLOW conjuntos,
+  - para cada passo do parse, a produção escolhida (útil para explicar por que a árvore foi construída assim).
+- Polir `core/generator.py` para gerar código executável com docstrings e testes simples.
+- Fazer um pass de UI/UX: mensagens de erro mais claras, highlight das produções envolvidas no conflito.
 
-### `GET /examples`
+Ficheiros principais e responsabilidades
 
-Devolve as gramáticas de exemplo pré-carregadas no backend.
+- web/app.py — controladora Flask e coordenação do fluxo (loader → calcular_first → calcular_follow → gerar_tabela_ll1 → validar_frase → render).
+- web/templates/index.html — frontend (formulário, exibição da tabela, árvore D3, botões de sugestão/aplicar).
+- core/loader.py — parser simples da gramática textual para estrutura interna.
+- core/parser_LL1.py — lógica FIRST/FOLLOW/tabela/parser/árvore.
+- core/refactor.py — transformações automáticas (remoção de recursividade à esquerda, fatorização) e proposição de mudanças.
+- core/generator.py — gerador de código do parser (esqueleto / funcionalidade inicial).
 
-### `POST /api/grammar/validate`
-
-Recebe uma gramática e devolve apenas validação sintática e estrutural, sem relatório LL(1) completo.
-
-## Fluxo de Utilização na Interface
-
-### 1. Analisar gramática
-
-O frontend envia o texto para `/analyze`. O backend devolve um relatório completo que a UI apresenta em:
-
-- conjuntos `FIRST` e `FOLLOW`;
-- tabela LL(1);
-- conflitos;
-- sugestões de correção.
-
-### 2. Construir árvore de derivação
-
-O frontend envia gramática e frase para `/parse`. O backend usa Lark para tentar o parse e devolve:
-
-- árvore em JSON;
-- versão textual;
-- diagrama Mermaid;
-- gramática Lark gerada.
-
-### 3. Gerar parser
-
-O frontend envia a gramática para `/generate-parser`. Se a gramática for LL(1), o backend devolve o código fonte do parser descendente recursivo em Python.
-
-## Testes
-
-O projeto contém testes em `tests/` para comportamentos importantes do backend, incluindo:
-
-- categorização de conflitos;
-- segurança das sugestões para `FIRST/FOLLOW`;
-- correções de padrões de lista;
-- requisitos da UI perante conflitos LL(k);
-- validações de fase 1.
-
-
-## Limitações Atuais
-
-- o parsing de frases usado pela web depende de Lark e não do parser LL(1) manual de `DerivationTreeBuilder`;
-- o gerador table-driven existe, mas ainda não está integrado na aplicação web;
-- a infraestrutura de `visitor` existe, mas ainda não foi ligada a uma funcionalidade da interface;
-
-## Resumo Técnico
-
-Em termos de backend, o projeto já tem três blocos fortes:
-
-- um parser formal da gramática de entrada;
-- um analisador LL(1) com deteção e explicação de conflitos;
-- um pipeline de parsing e visualização de árvores apoiado por Lark.
