@@ -9,7 +9,7 @@ Estado atual (o que já está feito)
 - Interface web (Flask) em `web/app.py` com templates em `web/templates/index.html`:
   - formulário para colar gramática e frase de entrada.
   - exibição da tabela LL(1), relatório de conflitos e árvore de derivação (desenhada com D3).
-  - botão "Sugerir Correções" que mostra uma gramática transformada (remoção de recursividade à esquerda e fatorização) e botão "Aplicar" para copiar a sugestão para a textarea.
+  - botão "Sugerir Correções" que mostra uma gramática transformada (remoção de recursividade à esquerda e fatorização) e botão "Aplicar" para copiar a sugestão para a gramtica.
 
 - Leitura e representação da gramática: `core/loader.py` lê a gramática textual para a estrutura interna (dicionário com `producoes`, `terminais`, `nao_terminais`, `inicial`).
 

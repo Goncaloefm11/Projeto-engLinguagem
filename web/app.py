@@ -16,36 +16,25 @@ EXEMPLOS = {
     "pascal_sub": "Program -> StmtList\nStmtList -> Stmt StmtList_P\nStmtList_P -> Stmt StmtList_P | ε\nStmt -> id : Expr\nExpr -> Term Expr_P\nExpr_P -> + Term Expr_P | ε\nTerm -> id | number",
     "agenda": """Agenda -> DeclXML AAGENDA Lista FAGENDA
 DeclXML -> DCA ListaAtrib DCF
-ListaAtrib -> Atrib ListaAtrib
-        |
+ListaAtrib -> Atrib ListaAtrib |
 Atrib -> id '=' vatrib
-Lista -> Elem Lista
-        |  
-Elem -> Entrada
-        | Grupo
+Lista -> Elem Lista |  
+Elem -> Entrada | Grupo
 Entrada -> AENTRADA ListaAtrib '>' Nome EntradaCont
-EntradaCont -> Telefone FENTRADA
-        | Email Telefone FENTRADA
+EntradaCont -> Telefone FENTRADA | Email Telefone FENTRADA
 Nome -> ANOME string FNOME
 Email -> AEMAIL string FEMAIL
 Telefone -> ATELEFONE string FTELEFONE
 Grupo -> AGRUPO ListaAtrib '>' GLista FGRUPO
-GLista -> GElem GLista
-        | 
-GElem -> Entrada
-        | Grupo
-        | Ref 
+GLista -> GElem GLista | 
+GElem -> Entrada | Grupo | Ref 
 Ref -> AREF ListaAtrib '/' '>'""",
 
 "arithmetic": """E -> T E'
-E' -> + T E' 
-    | ε
+E' -> + T E' | ε
 T -> F T'
-T' -> * F T' 
-    | ε
-F -> ( E )  
-    | id 
-    | number"""
+T' -> * F T' | ε
+F -> ( E )  | id | number"""
 }
 
 @app.route('/', methods=['GET', 'POST'])
