@@ -1,0 +1,12 @@
+TERMINAIS: id, :, +, number, ε
+NAO_TERMINAIS: Program, StmtList, StmtList', Stmt, Expr, Expr', Term
+INICIAL: Program
+
+PRODUCOES:
+Program -> StmtList
+StmtList -> Stmt StmtList'
+StmtList' -> Stmt StmtList' | ε
+Stmt -> id : Expr
+Expr -> Term Expr'
+Expr' -> + Term Expr' | ε
+Term -> id | number

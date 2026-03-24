@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title>Grammar Playground - GP</title>
+    <style>
+        /* Estilos base */
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+        .header { background-color: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { margin: 0; font-size: 24px; }
+        .header p { margin: 0; font-size: 14px; opacity: 0.8; }
+        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Layout de Formulário */
+        .flex-row { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 10px; }
+        .flex-grow { flex-grow: 1; }
+        textarea { width: 100%; height: 180px; font-family: 'Fira Code', monospace; padding: 15px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; box-sizing: border-box; }
+        input[type="text"] { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; font-family: monospace; }
+        
+        /* Secções e Tabelas */
+        .section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: white; }
+    th, td { border: 1px solid #dfe6e9; padding: 12px; text-align: center; }
+    th { background-color: #34495e; color: white; }
+        
+        /* Botões e Alertas */
+        button { background-color: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+        button:hover { background-color: #219150; }
+        .error-box { background-color: #fab1a0; color: #c0392b; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #e17055; }
+        .conflito-list { color: #d63031; font-weight: bold; }
+        
+        /* Área do Parser Gerado */
+        .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
+        
+        /* Árvore de Derivação */
+        #arvore-canvas { width: 100%; height: 500px; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; overflow: auto; margin-top: 10px; }
+        .node circle { fill: #3498db; stroke: #fff; stroke-width: 2px; }
+        .node text { font-size: 12px; font-weight: bold; }
+        .link { fill: none; stroke: #ccc; stroke-width: 2px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Grammar Playground (GP)</h1>
+        <p>Projeto de Engenharia de Linguagens · 2º Semestre 2026</p>
+    </div>
+
+    <div class="container">
+        <form method="POST" id="mainForm">
+            <div class="flex-row">
+                <div class="flex-grow">
+                    <label><strong>Gramática (Formato: NT -> prod1 | prod2):</strong></label>
+                </div>
+                <div>
+                    <label>Exemplos:</label>
+                    <select id="exemploSelect" onchange="carregarExemplo()" style="padding: 5px; border-radius: 4px;">
+                        <option value="">-- Selecionar --</option>
+                        {% for nome in exemplos %}
+                            <option value="{{ nome }}">{{ nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <textarea name="gramatica" id="gramaticaTexto" placeholder="Ex: S -> A B...">{{ gramatica_texto }}</textarea>
+            
+            <div style="margin-top: 20px;">
+                <label><strong>Frase de Entrada (para a Árvore):</strong></label>
+                <input type="text" name="frase" value="{{ frase_entrada }}" placeholder="Ex: id : number">
+                <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
+            </div>
+
+            <button type="submit">Analisar Tudo</button>
+        </form>
+
+        {% if resultado %}
+            {% if resultado.erro %}
+                <div class="section">
+                    <div class="error-box">
+                        <strong>Erro detetado:</strong> {{ resultado.erro }}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if resultado.gramatica %}
+                <div class="section">
+                    <h3>Relatório de Conflitos LL(1)</h3>
+                    {% if resultado.conflitos %}
+                        <ul class="conflito-list">
+                            {% for c in resultado.conflitos %} <li>{{ c }}</li> {% endfor %}
+                        </ul>
+                        {% if sugestao %}
+                        <div style="margin-top:10px;">
+                            <button id="btnSugestao" type="button" style="background-color:#e67e22">Sugerir Correções</button>
+                            <div id="sugestaoBox" style="display:none; margin-top:12px; padding:12px; border-radius:6px; background:#fff7ec; border:1px solid #f0c27b;">
+                                <h4 style="margin-top:0;">Sugestão de Gramática</h4>
+                                <pre id="sugestaoTexto" style="white-space:pre-wrap; font-family: monospace; background:transparent; border:none; padding:0;">{{ sugestao.texto_novo }}</pre>
+                                <p style="margin-bottom:6px;"><strong>Alterações propostas:</strong></p>
+                                <ul>
+                                    {% for a in sugestao.alteracoes %}
+                                        {% if a %}<li>{{ a }}</li>{% endif %}
+                                    {% endfor %}
+                                </ul>
+                                <div style="margin-top:8px; display:flex; gap:8px;">
+                                    <button id="btnAplicarSugestao" type="button" style="background-color:#16a085">Aplicar</button>
+                                    <button id="btnFecharSugestao" type="button" style="background-color:#bdc3c7; color:#2c3e50">Fechar</button>
+                                </div>
+                            </div>
+                        </div>
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function(){
+                                var btn = document.getElementById('btnSugestao');
+                                if (!btn) return;
+                                var box = document.getElementById('sugestaoBox');
+                                btn.addEventListener('click', function(){
+                                    box.style.display = (box.style.display === 'none') ? 'block' : 'none';
+                                });
+                                    var btnAplicar = document.getElementById('btnAplicarSugestao');
+                                    var btnFechar = document.getElementById('btnFecharSugestao');
+                                    var sugestaoPre = document.getElementById('sugestaoTexto');
+                                    var textarea = document.getElementById('gramaticaTexto');
+                                    if (btnAplicar && sugestaoPre && textarea) {
+                                        btnAplicar.addEventListener('click', function(){
+                                            // Copia o texto da sugestão para a textarea e foca
+                                            textarea.value = sugestaoPre.innerText.trim();
+                                            textarea.focus();
+                                            // Fecha a caixa de sugestão
+                                            box.style.display = 'none';
+                                        });
+                                    }
+                                    if (btnFechar) {
+                                        btnFechar.addEventListener('click', function(){ box.style.display = 'none'; });
+                                    }
+                            });
+                        </script>
+                        {% endif %}
+                    {% else %}
+                        <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
+                    {% endif %}
+                </div>
+
+                <div class="section">
+                    <h3>Tabela de Parsing LL(1)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NT \ Terminal</th>
+                                {% for t in resultado.gramatica.terminais %} <th>{{ t }}</th> {% endfor %}
+                                <th>$</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for nt, derivacoes in resultado.tabela.items() %}
+                            <tr>
+                                <td><strong>{{ nt }}</strong></td>
+                                {% for t in resultado.gramatica.terminais %}
+                                    <td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td>
+                                {% endfor %}
+                                <td>{{ ' '.join(derivacoes.get('$', ['-'])) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if resultado.arvore %}
+                <div class="section">
+                    <h3>Árvore de Derivação</h3>
+                    <div id="arvore-canvas"></div>
+                </div>
+                {% endif %}
+
+                {% if codigo_parser %}
+                <div class="section">
+                    <h3>Parser Recursivo Descendente Gerado</h3>
+                    <textarea readonly class="parser-code">{{ codigo_parser }}</textarea>
+                    <p style="font-size: 12px;">Podes copiar este código para um ficheiro .py e testar com um Lexer.</p>
+                </div>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Lógica dos Exemplos
+        const exemplos = {{ exemplos|tojson }};
+        function carregarExemplo() {
+            const val = document.getElementById('exemploSelect').value;
+            if (val && exemplos[val]) {
+                document.getElementById('gramaticaTexto').value = exemplos[val];
+            }
+        }
+
+        // Desenho da Árvore com D3.js
+        {% if resultado and resultado.arvore %}
+        const treeData = {{ resultado.arvore|tojson }};
+        const width = 900, height = 500;
+        
+        const svg = d3.select("#arvore-canvas").append("svg")
+            .attr("width", width).attr("height", height)
+            .append("g").attr("transform", "translate(50,50)");
+
+        const tree = d3.tree().size([height - 100, width - 200]);
+        const root = d3.hierarchy(treeData);
+        tree(root);
+
+        svg.selectAll(".link").data(root.links()).enter().append("path")
+            .attr("class", "link").attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
+
+        const node = svg.selectAll(".node").data(root.descendants()).enter().append("g")
+            .attr("transform", d => `translate(${d.y},${d.x})`);
+
+        node.append("circle").attr("r", 6).style("fill", d => d.children ? "#3498db" : "#2ecc71");
+        node.append("text").attr("dy", -10).attr("x", 0).style("text-anchor", "middle").text(d => d.data.name);
+        {% endif %}
+    </script>
+</body>
+</html>
