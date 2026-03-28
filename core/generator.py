@@ -8,21 +8,21 @@ def gerar_codigo_parser(gramatica, tabela):
         "",
         "def parser_error(simb):",
         "    print(f'Erro sintático: token inesperado {simb}')",
-        "    sys.exit(1)",
         "",
-        "def rec_term(esperado, tokens):",
+        "def rec_term(esperado):",
         "    global prox_simb",
         "    if prox_simb and prox_simb['type'] == esperado:",
-        "        if tokens: prox_simb = tokens.pop(0)",
-        "        else: prox_simb = None",
-        "    else: parser_error(prox_simb)",
+        "       prox_simb = lexer.token()",
+        "    else:",
+        "       parser_error(prox_simb)",
+        "       prox_simb = ('erro', '', 0, 0)",
         "--------------------------------------------------------"
         ""
     ]
 
     # Gerar funções para cada Não-Terminal
     for nt, caminhos in tabela.items():
-        codigo.append(f"def rec_{nt}(tokens):")
+        codigo.append(f"def rec_{nt}():")
         codigo.append("    global prox_simb")
         
         for i, (term, prod) in enumerate(caminhos.items()):
@@ -32,17 +32,18 @@ def gerar_codigo_parser(gramatica, tabela):
             
             codigo.append(f"    {condicao} prox_simb and prox_simb['type'] == {t_cond}:")
             if prod == ['ε']:
-                codigo.append(f"        {nt} ->      # Produção vazia")
+                codigo.append(f"        print('{nt} -> ε')")
             else:
                 for simbolo in prod:
                     if simbolo in gramatica['nao_terminais']:
                         codigo.append(f"        rec_{simbolo}()")
                     else:
-                        codigo.append(f"        rec_term({simbolo})")
+                        s_limpo = simbolo.replace("'", "")
+                        codigo.append(f"        rec_term('{s_limpo}')")
                     
                 # 2. No FINAL, imprimimos a regra completa numa só linha
                 producao_texto = " ".join(prod)
-                codigo.append(f"        {nt} -> {producao_texto}")
+                codigo.append(f"        print('{nt} -> {producao_texto}')")
         
         codigo.append("    else: parser_error(prox_simb)\n")
 
