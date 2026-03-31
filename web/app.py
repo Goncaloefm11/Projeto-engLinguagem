@@ -12,13 +12,25 @@ app = Flask(__name__)
 
 # No topo do web/app.py, define os exemplos
 EXEMPLOS = {
-    "simples": "S -> A B\nA -> a | ε\nB -> b | c",
-    "pascal_sub": "Program -> StmtList\nStmtList -> Stmt StmtList_P\nStmtList_P -> Stmt StmtList_P | ε\nStmt -> id : Expr\nExpr -> Term Expr_P\nExpr_P -> + Term Expr_P | ε\nTerm -> id | number",
+    "simples": """S -> A B
+A -> a | ε
+B -> b | c""",
+    
+    "pascal_sub": """Program -> StmtList
+StmtList -> Stmt StmtList_P
+StmtList_P -> Stmt StmtList_P | ε
+Stmt -> id : Expr
+Expr -> Term Expr_P
+Expr_P -> + Term Expr_P | ε
+Term -> id | number
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+number -> [0-9]+""",
+    
     "agenda": """Agenda -> DeclXML AAGENDA Lista FAGENDA
 DeclXML -> DCA ListaAtrib DCF
-ListaAtrib -> Atrib ListaAtrib |
+ListaAtrib -> Atrib ListaAtrib | ε
 Atrib -> id '=' vatrib
-Lista -> Elem Lista |  
+Lista -> Elem Lista | ε
 Elem -> Entrada | Grupo
 Entrada -> AENTRADA ListaAtrib '>' Nome EntradaCont
 EntradaCont -> Telefone FENTRADA | Email Telefone FENTRADA
@@ -26,15 +38,20 @@ Nome -> ANOME string FNOME
 Email -> AEMAIL string FEMAIL
 Telefone -> ATELEFONE string FTELEFONE
 Grupo -> AGRUPO ListaAtrib '>' GLista FGRUPO
-GLista -> GElem GLista | 
+GLista -> GElem GLista | ε
 GElem -> Entrada | Grupo | Ref 
-Ref -> AREF ListaAtrib '/' '>'""",
+Ref -> AREF ListaAtrib '/' '>'
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+vatrib -> \"[^"]*\"
+string -> [^<]+""",
 
-"arithmetic": """E -> T E'
+    "arithmetic": """E -> T E'
 E' -> + T E' | ε
 T -> F T'
 T' -> * F T' | ε
-F -> ( E )  | id | number"""
+F -> ( E )  | id | number
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+number -> [0-9]+"""
 }
 
 @app.route('/', methods=['GET', 'POST'])
