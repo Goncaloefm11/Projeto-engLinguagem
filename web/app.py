@@ -87,10 +87,10 @@ GElem       -> Entrada
               | Grupo 
               | Ref
 
-Ref         -> AREF ListaAtrib '/' '>'
+Ref->AREF ListaAtrib '/' '>'
 
-DCA         -> '<?xml'
-DCF         -> '?>'
+DCA->'<?xml'
+DCF->'?>'
 AAGENDA     -> '<agenda>'
 FAGENDA     -> '</agenda>'
 AENTRADA    -> '<entrada'
@@ -105,7 +105,7 @@ FEMAIL      -> '</email>'
 ATELEFONE   -> '<telefone>'
 FTELEFONE   -> '</telefone>'
 
-id          -> [a-zA-Z_][a-zA-Z0-9_]*
+id ->[a-zA-Z_][a-zA-Z0-9_]*
 vatrib -> '"[^"<>]*"'
 string      -> [^<>]+
 number      -> [0-9]+ 
@@ -142,9 +142,9 @@ Ficheiro -> '[' string string ']'
 string -> [^<>]+
 
 """,
-    "SQL": """SQuery         -> Query number ListaIds 'VALUES' ListaLinhas
+    "SQL": """SQuery->Query number ListaIds 'VALUES' ListaLinhas
 
-Query          -> 'SELECT' Colunas 'FROM' id
+Query ->'SELECT' Colunas 'FROM' id
 
 Colunas        -> '*' 
                 | ListaColunas
@@ -165,11 +165,11 @@ ListaVal       -> Coluna ListaVal_P
 ListaVal_P     -> Coluna ListaVal_P 
                 | ε
 
-Coluna         -> number 
+Coluna->number 
                 | id
 
-id             -> [a-zA-Z_][a-zA-Z0-9_]*
-number         -> [0-9]+
+id    ->[a-zA-Z_][a-zA-Z0-9_]*
+number->[0-9]+
 """,
 
     "SQL Conflituosa":"""SQuery -> Query number ListaIds ListaLinhas
@@ -219,23 +219,34 @@ Lista  -> Exp Lista
         | ε
 number -> [0-9]+""",
 
-    "JSON": """json       -> element
-element    -> ws value ws
-value      -> object | array | string | number | "true" | "false" | "null"
+    "JSON": r"""JSON ->Value
 
-object     -> "{" ws [members] ws "}"
-members    -> pair { ws "," ws pair }
-pair       -> string ws ":" ws element
+Value->Object
+        | Array
+        | string
+        | number
+        | 'true'
+        | 'false'
+        | 'null'
 
-array      -> "[" ws [elements] ws "]"
-elements   -> element { ws "," ws element }
+Object        -> '{' Members '}'
+Members       -> Pair Members_Tail
+               | ε
+               
+Pair ->string ':' Value
 
-ws         -> [ \n\r\t]*
-string     -> '"' { any_character_except_quote } '"'
-number     -> ["-"] int ["." frac] [exp]
-int        -> "0" | [1-9][0-9]*
-frac       -> [0-9]+
-exp        -> ("e" | "E") ["+" | "-"] [0-9]+"""
+Members_Tail  -> ',' Pair Members_Tail
+               | ε
+
+Array->'[' Elements ']'
+Elements      -> Value Elements_Tail
+               | ε
+               
+Elements_Tail -> ',' Value Elements_Tail
+               | ε 
+
+string        -> '"[^"]*"'
+number        -> \-?[0-9]+(\.[0-9]+)?"""
 }
 
 frases_exemplo = {
@@ -261,19 +272,7 @@ frases_exemplo = {
   "SQL": "SELECT * FROM users 5 user_id VALUES 100 SEP 200 SEP 300",
   "SExp": "( + 1 2 ( * 3 4 ) ) .",
   "S9 Bottom-Up": "( * 5 10 20 ( + 1 1 ) ) .",
-  "JSON": """{
-  "projeto": "Compiladores",
-  "versao": 2.0,
-  "finalizado": false,
-  "autores": [
-    "Ana",
-    "Pedro"
-  ],
-  "metadados": {
-    "tags": ["Mestrado", "Gramatica"],
-    "rating": null
-  }
-}"""
+  "JSON": "{ \"id\" : 101 , \"activo\" : true , \"valores\" : [ 10.5 , 20.0 , -5 ] , \"info\" : { \"tags\" : [ \"ia\" , \"gramatica\" ] , \"nota\" : null } }"
 }
 
 @app.route('/', methods=['GET', 'POST'])

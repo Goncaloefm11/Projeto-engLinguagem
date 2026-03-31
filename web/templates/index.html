@@ -37,6 +37,15 @@
         .node circle { fill: #3498db; stroke: #fff; stroke-width: 2px; }
         .node text { font-size: 12px; font-weight: bold; }
         .link { fill: none; stroke: #ccc; stroke-width: 2px; }
+        
+        /* Controles de Zoom */
+        .zoom-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        .zoom-btn { background-color: #3498db; color: white; padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .zoom-btn:hover { background-color: #2980b9; }
+        .zoom-reset-btn { background-color: #95a5a6; }
+        .zoom-reset-btn:hover { background-color: #7f8c8d; }
+        .mermaid-wrapper { border: 1px solid #eee; background: white; padding: 20px; border-radius: 4px; overflow: auto; min-height: 600px; display: flex; align-items: center; justify-content: center; }
+        .mermaid { transform-origin: top center; transition: transform 0.2s; }
     </style>
 </head>
 <body>
@@ -237,8 +246,13 @@
                     </div>
 
                     <h4 style="margin-top: 20px;">Visualização Mermaid</h4>
-                    <div style="border: 1px solid #eee; background: white; padding: 20px; border-radius: 4px; overflow: auto; display: flex; justify-content: center;">
-                        <pre class="mermaid">{{ resultado.arvore_mermaid | safe }}</pre>
+                    <div class="zoom-container">
+                        <button type="button" class="zoom-btn" onclick="zoomMermaid(1.2)">+ Zoom In</button>
+                        <button type="button" class="zoom-btn" onclick="zoomMermaid(0.8)">- Zoom Out</button>
+                        <button type="button" class="zoom-btn zoom-reset-btn" onclick="resetZoomMermaid()">Reset</button>
+                    </div>
+                    <div class="mermaid-wrapper" id="mermaid-container">
+                        <pre class="mermaid" id="mermaid-diagram" style="display: inline-block; width: 100%;">{{ resultado.arvore_mermaid | safe }}</pre>
                     </div>
                 </div>
                 {% endif %}
@@ -275,6 +289,24 @@
             const val = document.getElementById('fraseExemploSelect').value;
             if (val && frases_exemplo[val]) {
                 document.getElementById('fraseInput').value = frases_exemplo[val];
+            }
+        }
+
+        // Zoom para Mermaid
+        let currentZoom = 1;
+        function zoomMermaid(factor) {
+            currentZoom *= factor;
+            const diagram = document.getElementById('mermaid-diagram');
+            if (diagram) {
+                diagram.style.transform = `scale(${currentZoom})`;
+            }
+        }
+
+        function resetZoomMermaid() {
+            currentZoom = 1;
+            const diagram = document.getElementById('mermaid-diagram');
+            if (diagram) {
+                diagram.style.transform = 'scale(1)';
             }
         }
 
