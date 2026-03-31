@@ -52,7 +52,7 @@ def calcular_follow(gramatica, firsts):
     follow = {nt: set() for nt in gramatica['nao_terminais']}
     
     # Regra 1: Símbolo inicial recebe o marcador de fim ($)
-    simbolo_inicial = gramatica['nao_terminais'][0]
+    simbolo_inicial = gramatica['inicial']
     follow[simbolo_inicial].add('$')
     
     mudou = True
@@ -148,11 +148,7 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
             
             # Se o token não está na tabela para este NT
             if tipo_token not in tabela.get(nt_atual, {}):
-                # Se houver uma regra de vazio (ε) na tabela para este NT, usamos
-                if 'ε' in tabela.get(nt_atual, {}):
-                    no['children'].append({'name': 'ε'})
-                    return no
-                return None # Erro: não há caminho nem vazio
+                return None # Erro: token inesperado, não há caminho possível
 
             producao = tabela[nt_atual][tipo_token]
             
@@ -170,7 +166,47 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
         
         return no
 
-    simbolo_inicial = gramatica['nao_terminais'][0]
+    simbolo_inicial = gramatica['inicial']
     arvore_final = parse(simbolo_inicial)
     
     return arvore_final
+
+def arvore_para_texto(nodo, nivel=0):
+    """Gera uma representação textual indentada da árvore."""
+    if not nodo:
+        return ""
+    
+    # Cria a indentação baseada no nível atual
+    resultado = "  " * nivel + "|- " + str(nodo['name']) + "\n"
+    
+    # Percorre os filhos recursivamente
+    for filho in nodo.get('children', []):
+        resultado += arvore_para_texto(filho, nivel + 1)
+        
+    return resultado
+
+def arvore_para_mermaid(nodo):
+    """Gera o código de um fluxograma Mermaid (graph TD) a partir da árvore."""
+    linhas = ["graph TD"]
+    contador = 0
+
+    def percorrer(n):
+        nonlocal contador
+        id_atual = f"n{contador}"
+        contador += 1
+        
+        # Escapar aspas para evitar quebrar a sintaxe do Mermaid
+        nome_seguro = str(n['name']).replace('"', '#quot;').replace('<', '&lt;').replace('>', '&gt;')
+        linhas.append(f'    {id_atual}["{nome_seguro}"]')
+        
+        for filho in n.get('children', []):
+            id_filho = percorrer(filho)
+            # Liga o nó pai ao nó filho
+            linhas.append(f'    {id_atual} --> {id_filho}')
+            
+        return id_atual
+
+    if nodo:
+        percorrer(nodo)
+        
+    return "\n".join(linhas)

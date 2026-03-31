@@ -1,12 +1,15 @@
+#app.py
 from flask import Flask, render_template, request
 import sys
 import os
+import re
 
 # Adiciona a pasta raiz ao path para conseguirmos importar o 'core'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.loader import carregar_gramatica_da_string
-from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1
+from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao, arvore_para_texto, arvore_para_mermaid
+
 
 app = Flask(__name__)
 
@@ -19,13 +22,14 @@ Cont -> ']'
 
 Elems -> Elem Resto
 
-Resto -> vazio 
+Resto -> ε
         | ',' Elem Resto
 
 Elem-> int 
-    | str
+    | string
 
-int -> [0-9]+""",
+int -> [0-9]+
+string -> [^<>]+""",
     
     "Pascal_sub": """Program -> StmtList
 
@@ -102,7 +106,7 @@ ATELEFONE   -> '<telefone>'
 FTELEFONE   -> '</telefone>'
 
 id          -> [a-zA-Z_][a-zA-Z0-9_]*
-vatrib      -> '"' [^"<>]* '"'
+vatrib -> '"[^"<>]*"'
 string      -> [^<>]+
 number      -> [0-9]+ 
 """,
@@ -127,15 +131,16 @@ number -> [0-9]+""",
 
     "Filesystem": """Z -> Dir
 
-Dir -> '(' texto Conteudo ')' 
+Dir -> '(' string Conteudo ')' 
     | Ficheiro
 
 Conteudo -> Conteudo Dir 
             | ε
 
-Ficheiro -> '[' texto texto ']'
+Ficheiro -> '[' string string ']'
 
-texto -> '"' [^"]+ '"'
+string -> [^<>]+
+
 """,
     "SQL": """SQuery         -> Query number ListaIds 'VALUES' ListaLinhas
 
@@ -192,14 +197,14 @@ Coluna -> number
 id -> [a-zA-Z_][a-zA-Z0-9_]*
 number -> [0-9]+""",
 
-        "SExp": """Sexp   --> Exp '.'
-Exp    --> number
+        "SExp": """Sexp   -> Exp '.'
+Exp    -> INT
          | '(' Funcao ')'
-Funcao --> '+' Lista
+Funcao -> '+' Lista
          | '*' Lista
-Lista  --> Lista Exp
+Lista  -> Lista Exp
          | ε
-number -> [0-9]+
+INT -> [0-9]+
         """,
 
     "S9 Bottom-Up":"""S      -> Exp '.'
@@ -214,28 +219,61 @@ Lista  -> Exp Lista
         | ε
 number -> [0-9]+""",
 
-    "JSON": """JSON          -> Value
+    "JSON": """json       -> element
+element    -> ws value ws
+value      -> object | array | string | number | "true" | "false" | "null"
 
-Value         -> Object
-               | Array
-               | string
-               | number
-               | 'true'
-               | 'false'
-               | 'null'
+object     -> "{" ws [members] ws "}"
+members    -> pair { ws "," ws pair }
+pair       -> string ws ":" ws element
 
-Object        -> '{' Members '}'
-Members       -> Pair Members_Tail
-               | ε
-Pair          -> string ':' Value
-Members_Tail  -> ',' Pair Members_Tail
-               | ε
+array      -> "[" ws [elements] ws "]"
+elements   -> element { ws "," ws element }
 
-Array         -> '[' Elements ']'
-Elements      -> Value Elements_Tail
-               | ε
-Elements_Tail -> ',' Value Elements_Tail
-               | ε """
+ws         -> [ \n\r\t]*
+string     -> '"' { any_character_except_quote } '"'
+number     -> ["-"] int ["." frac] [exp]
+int        -> "0" | [1-9][0-9]*
+frac       -> [0-9]+
+exp        -> ("e" | "E") ["+" | "-"] [0-9]+"""
+}
+
+frases_exemplo = {
+    "Lista": "[ 1 , 2 , 3 ]",
+    "Pascal_sub": "x : a + 10",
+    "Agenda": """<?xml version="1.0" ?>
+<agenda>
+  <entrada ident="e1">
+    <nome>Joana</nome>
+    <email>joana@mail.com</email>
+    <telefone>912345678</telefone>
+  </entrada>
+  <grupo ident="g1">
+    <ref id="e1" />
+    <entrada>
+      <nome>Pedro</nome>
+      <telefone>220000000</telefone>
+    </entrada>
+  </grupo>
+</agenda>""",
+   "Arithmetic": "5 + id_var * ( 10 + 20 )",
+  "Filesystem": """( "root" ( "docs" [ "cv.pdf" "~/home/cv.pdf" ] ) ( "images" [ "foto.png" "./foto.png" ] ) )""",
+  "SQL": "SELECT * FROM users 5 user_id VALUES 100 SEP 200 SEP 300",
+  "SExp": "( + 1 2 ( * 3 4 ) ) .",
+  "S9 Bottom-Up": "( * 5 10 20 ( + 1 1 ) ) .",
+  "JSON": """{
+  "projeto": "Compiladores",
+  "versao": 2.0,
+  "finalizado": false,
+  "autores": [
+    "Ana",
+    "Pedro"
+  ],
+  "metadados": {
+    "tags": ["Mestrado", "Gramatica"],
+    "rating": null
+  }
+}"""
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -270,18 +308,50 @@ def index():
 
             # Se o utilizador escreveu uma frase, tentamos gerar a árvore
             if frase_entrada.strip():
-                # Tokenização simples: separa por espaços
                 tokens_lista = []
                 for t in frase_entrada.split():
-                    if t.isdigit():
-                        tipo = 'number'
-                    else:
+                    tipo = None
+                    
+                    # 1. Correspondência Exata: É um símbolo literal definido na gramática?
+                    if t in g['terminais']:
                         tipo = t
-                    tokens_lista.append({'type': tipo, 'value': tipo})
+                    elif f"'{t}'" in g['terminais']:
+                        tipo = f"'{t}'"
+                    else:
+                       # 2. A MÁGICA DINÂMICA: Procura nas regras da gramática por um padrão Regex que encaixe
+                        for nt, producoes in g['producoes'].items():
+                            for prod in producoes:
+                                # Regras lexicais costumam ter apenas 1 símbolo no lado direito (ex: [0-9]+)
+                                if len(prod) == 1:
+                                    padrao = prod[0].strip("'") # Limpa possíveis aspas em volta do regex
+                                    try:
+                                        # Verifica se a palavra inteira (t) respeita o regex da gramática
+                                        if re.fullmatch(padrao, t):
+                                            tipo = prod[0] 
+                                            break
+                                    except re.error:
+                                        # Se a string não for um regex válido para o Python, ignora em silêncio
+                                        pass
+                            if tipo:
+                                break # Já encontrou o tipo, sai do loop dos não-terminais
+                    
+                    # #3. Fallback de segurança (caso testes uma gramática onde te esqueceste de escrever os regex no final)
+                    # if not tipo:
+                    #     if t.isdigit(): tipo = 'number'
+                    #     elif t.startswith('"') and t.endswith('"'): tipo = 'string'
+                    #     else: tipo = t
+
+                    tokens_lista.append({'type': tipo, 'value': t})
                 
-                # Chamamos a função que criámos anteriormente
-                from core.parser_LL1 import gerar_arvore_derivacao
-                resultado['arvore'] = gerar_arvore_derivacao(tokens_lista, g, tab)
+                arvore_dict = gerar_arvore_derivacao(tokens_lista, g, tab)
+            
+
+                if arvore_dict is None:
+                    resultado['erro'] = "A frase de entrada tem um erro sintático e não é aceite por esta gramática."
+                else:
+                    resultado['arvore'] = arvore_dict
+                    resultado['arvore_texto'] = arvore_para_texto(arvore_dict)
+                    resultado['arvore_mermaid'] = arvore_para_mermaid(arvore_dict)
 
         except Exception as e:
             resultado = {'erro': str(e)}
@@ -291,6 +361,7 @@ def index():
                            gramatica_texto=gramatica_texto, 
                            frase_entrada=frase_entrada,
                            exemplos=EXEMPLOS,
+                           frases_exemplo=frases_exemplo,
                            codigo_parser=codigo_parser,
                            sugestao=sugestao)
 

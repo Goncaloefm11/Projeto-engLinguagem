@@ -27,19 +27,25 @@ def propor_correcoes(gramatica_original):
 
 def gramatica_para_texto(gramatica):
     linhas = []
-    # Procurar manter a ordem original dos não-terminais quando possível.
-    # A estrutura `nao_terminais` costuma guardar a ordem desejada (símbolo inicial primeiro).
-    ordem = list(gramatica.get('nao_terminais', []))
+    inicial = gramatica.get('inicial')
+    
+    # 1. Força o símbolo inicial a ser o primeiro da lista
+    ordem = []
+    if inicial:
+        ordem.append(inicial)
 
-    # Acrescentar quaisquer não-terminais que estejam nas producoes mas não em 'nao_terminais'
+    # 2. Adiciona os restantes Não-Terminais
+    for nt in gramatica.get('nao_terminais', []):
+        if nt not in ordem:
+            ordem.append(nt)
+
+    # 3. Acrescenta os gerados dinamicamente (fatorização/recursividade)
     for nt in gramatica['producoes'].keys():
         if nt not in ordem:
             ordem.append(nt)
 
     for nt in ordem:
         prods = gramatica['producoes'].get(nt, [])
-        # Junta as produções com o símbolo pipe |
-        # Ex: S -> a B | c
         prods_texto = [" ".join(p) for p in prods]
         linhas.append(f"{nt} -> {' | '.join(prods_texto)}")
 
