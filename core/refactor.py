@@ -1,3 +1,4 @@
+#core/refactor.py
 from core.parser_LL1 import gerar_tabela_ll1, calcular_first, calcular_follow
 import os
 
@@ -80,13 +81,20 @@ def remover_recursividade_esquerda(gramatica):
         if diretas:
             modificado = True
             nt_novo = f"{nt}_P"
+            while nt_novo in novos_nt: nt_novo += "P"
             novos_nt.add(nt_novo)
             
-            # A -> beta A_P
-            # Se não houver betas, usamos apenas o novo NT (embora a gramática seria inválida)
-            novas_producoes[nt] = [p + [nt_novo] for p in nao_diretas] if nao_diretas else [[nt_novo]]
+            # A -> beta A_P (Se beta for ε, fica apenas A_P)
+            novas_prods_base = []
+            for p in nao_diretas:
+                if p == ['ε']:
+                    novas_prods_base.append([nt_novo])
+                else:
+                    novas_prods_base.append(p + [nt_novo])
             
-            # A_P -> alpha A_P | epsilon
+            novas_producoes[nt] = novas_prods_base if nao_diretas else [[nt_novo]]
+            
+            # A_P -> alpha A_P | ε
             novas_producoes[nt_novo] = [p[1:] + [nt_novo] for p in diretas] + [['ε']]
         else:
             novas_producoes[nt] = producoes
@@ -100,33 +108,44 @@ def fatorizar_esquerda(gramatica):
     novas_producoes = gramatica['producoes'].copy()
     novos_nt = set(gramatica['nao_terminais'])
     
+    # Função auxiliar para obter o primeiro terminal real de uma produção
+    def obter_primeiro_token(prod):
+        simbolo = prod[0]
+        if simbolo in gramatica['terminais'] or simbolo == 'ε':
+            return simbolo
+        # Se for Não-Terminal, tentamos ver o primeiro símbolo da sua primeira produção
+        # Nota: Isto é uma simplificação. O ideal seria usar o conjunto FIRST.
+        sub_prods = gramatica['producoes'].get(simbolo, [])
+        if sub_prods and len(sub_prods[0]) > 0:
+            return obter_primeiro_token(sub_prods[0])
+        return simbolo
+
     for nt in list(novas_producoes.keys()):
         prods = novas_producoes[nt]
         if len(prods) < 2: continue
         
-        # Agrupar por primeiro símbolo
         prefixos = {}
         for p in prods:
-            primeiro = p[0]
-            if primeiro not in prefixos: prefixos[primeiro] = []
-            prefixos[primeiro].append(p)
+            token_decisivo = obter_primeiro_token(p)
+            prefixos.setdefault(token_decisivo, []).append(p)
             
-        for simb, lista_prods in prefixos.items():
-            if len(lista_prods) > 1: # Encontrou prefixo comum
+        for token, lista_prods in prefixos.items():
+            if len(lista_prods) > 1:
                 modificado = True
                 nt_novo = f"{nt}_F"
-                while nt_novo in novos_nt: nt_novo += "F" # Evitar colisões de nomes
-                
+                while nt_novo in novos_nt: nt_novo += "F"
                 novos_nt.add(nt_novo)
                 
-                # Substituir as produções originais que tinham o prefixo
-                novas_producoes[nt] = [p for p in prods if p[0] != simb]
-                novas_producoes[nt].append([simb, nt_novo])
+                # Manter produções que não conflituam
+                restantes = [p for p in prods if obter_primeiro_token(p) != token]
                 
-                # Criar as novas produções para o NT fatorizado
-                # Se a produção era apenas o símbolo, sobra o epsilon
+                # Encontrar o prefixo comum real (neste caso simplificado, o primeiro símbolo)
+                prefixo_comum = lista_prods[0][0] 
+                novas_producoes[nt] = restantes + [[prefixo_comum, nt_novo]]
+                
+                # Criar as derivações para o novo NT fatorizado
                 novas_producoes[nt_novo] = [p[1:] if len(p) > 1 else ['ε'] for p in lista_prods]
                 
-    gramatica['producoes'] = novas_producoes
     gramatica['nao_terminais'] = list(novos_nt)
+    gramatica['producoes'] = novas_producoes
     return gramatica, modificado

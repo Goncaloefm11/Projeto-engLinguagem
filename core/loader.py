@@ -1,3 +1,4 @@
+#core/loader.py
 """Lê uma string com a gramática e devolve a representação interna.
 
 O loader aceita produções distribuídas por várias linhas usando o símbolo

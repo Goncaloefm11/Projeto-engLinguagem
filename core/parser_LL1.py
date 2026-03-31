@@ -1,3 +1,4 @@
+#core/parser_LL1.py
 #calcula first, follow, tabela e arvore
 def calcular_first(gramatica):
     # Inicializa os conjuntos FIRST para cada Não-Terminal 

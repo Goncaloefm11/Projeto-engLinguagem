@@ -12,45 +12,174 @@ app = Flask(__name__)
 
 # No topo do web/app.py, define os exemplos
 EXEMPLOS = {
-    "simples": """S -> A B
-A -> a | ε
-B -> b | c""",
+    "Simples": """S -> A B
     
-    "pascal_sub": """Program -> StmtList
+A -> a 
+    | ε
+
+B -> b 
+    | c""",
+    
+    "Pascal_sub": """Program -> StmtList
+
 StmtList -> Stmt StmtList_P
-StmtList_P -> Stmt StmtList_P | ε
-Stmt -> id : Expr
+
+StmtList_P -> Stmt StmtList_P 
+            | ε
+
+Stmt -> id ':' Expr
+
 Expr -> Term Expr_P
-Expr_P -> + Term Expr_P | ε
-Term -> id | number
+
+Expr_P -> '+' Term Expr_P
+        | ε
+
+Term -> id 
+        | number
+
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+number  -> [0-9]+
+""",
+    
+    "Agenda": """Agenda      -> DeclXML AAGENDA Lista FAGENDA
+
+DeclXML     -> DCA ListaAtrib DCF
+
+ListaAtrib  -> Atrib ListaAtrib 
+              | ε
+
+Atrib       -> id '=' vatrib
+
+Lista       -> Elem Lista 
+              | ε
+
+Elem        -> Entrada 
+              | Grupo
+
+Entrada     -> AENTRADA ListaAtrib '>' Nome EntradaCont
+
+EntradaCont -> Telefone FENTRADA 
+              | Email Telefone FENTRADA
+
+Nome        -> ANOME string FNOME
+
+Email       -> AEMAIL string FEMAIL
+
+Telefone    -> ATELEFONE string FTELEFONE
+
+Grupo       -> AGRUPO ListaAtrib '>' GLista FGRUPO
+
+GLista      -> GElem GLista 
+              | ε
+
+GElem       -> Entrada 
+              | Grupo 
+              | Ref
+
+Ref         -> AREF ListaAtrib '/' '>'
+
+DCA         -> '<?xml'
+DCF         -> '?>'
+AAGENDA     -> '<agenda>'
+FAGENDA     -> '</agenda>'
+AENTRADA    -> '<entrada'
+FENTRADA    -> '</entrada>'
+AGRUPO      -> '<grupo'
+FGRUPO      -> '</grupo>'
+AREF        -> '<ref'
+ANOME       -> '<nome>'
+FNOME       -> '</nome>'
+AEMAIL      -> '<email>'
+FEMAIL      -> '</email>'
+ATELEFONE   -> '<telefone>'
+FTELEFONE   -> '</telefone>'
+
+id          -> [a-zA-Z_][a-zA-Z0-9_]*
+vatrib      -> '"' [^"<>]* '"'
+string      -> [^<>]+
+number      -> [0-9]+ 
+""",
+
+    "Arithmetic": """E -> T E'
+
+E' -> '+' T E' 
+    | ε
+
+T -> F T'
+
+T' -> '*' F T' 
+    | ε
+
+F -> '(' E ')'  
+    | id 
+    | number
+
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+
+number -> [0-9]+""",
+
+    "Filesystem": """Z -> Dir
+
+Dir -> '(' texto Conteudo ')' 
+    | Ficheiro
+
+Conteudo -> Conteudo Dir 
+            | ε
+
+Ficheiro -> '[' texto texto ']'
+
+texto -> '"' [^"]+ '"'
+""",
+
+    "SQL":"""SQuery -> Query number ListaIds ListaLinhas
+
+Query -> 'SELECT' Colunas 'FROM' id
+
+Colunas -> '*' 
+         | ListaColunas
+
+ListaColunas -> ListaColunas ',' id
+              | id
+
+ListaIds -> ListaIds id
+          | id
+
+ListaLinhas -> ListaLinhas 'SEP' ListaVal
+             | ListaVal
+
+ListaVal -> ListaVal Coluna
+          | Coluna
+
+Coluna -> number 
+        | id 
+        
 id -> [a-zA-Z_][a-zA-Z0-9_]*
 number -> [0-9]+""",
-    
-    "agenda": """Agenda -> DeclXML AAGENDA Lista FAGENDA
-DeclXML -> DCA ListaAtrib DCF
-ListaAtrib -> Atrib ListaAtrib | ε
-Atrib -> id '=' vatrib
-Lista -> Elem Lista | ε
-Elem -> Entrada | Grupo
-Entrada -> AENTRADA ListaAtrib '>' Nome EntradaCont
-EntradaCont -> Telefone FENTRADA | Email Telefone FENTRADA
-Nome -> ANOME string FNOME
-Email -> AEMAIL string FEMAIL
-Telefone -> ATELEFONE string FTELEFONE
-Grupo -> AGRUPO ListaAtrib '>' GLista FGRUPO
-GLista -> GElem GLista | ε
-GElem -> Entrada | Grupo | Ref 
-Ref -> AREF ListaAtrib '/' '>'
-id -> [a-zA-Z_][a-zA-Z0-9_]*
-vatrib -> \"[^"]*\"
-string -> [^<]+""",
 
-    "arithmetic": """E -> T E'
-E' -> + T E' | ε
-T -> F T'
-T' -> * F T' | ε
-F -> ( E )  | id | number
-id -> [a-zA-Z_][a-zA-Z0-9_]*
+        "SExp": """Sexp   -> Exp '.'
+
+Exp    -> number 
+        | '(' Funcao ')'
+
+Funcao -> '+' Lista 
+        | '*' Lista
+
+Lista  -> Lista Exp 
+        | ε
+        
+number       -> [0-9]+
+        """,
+
+    "S9 Bottom-Up":"""S      -> Exp '.'
+
+Exp    -> number 
+        | '(' Funcao ')'
+
+Funcao -> '+' Lista 
+        | '*' Lista
+
+Lista  -> Exp Lista 
+        | ε
 number -> [0-9]+"""
 }
 
