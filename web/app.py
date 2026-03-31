@@ -12,13 +12,20 @@ app = Flask(__name__)
 
 # No topo do web/app.py, define os exemplos
 EXEMPLOS = {
-    "Simples": """S -> A B
-    
-A -> a 
-    | ε
+    "Lista": """Lista -> '[' Cont
 
-B -> b 
-    | c""",
+Cont -> ']' 
+    | Elems ']'
+
+Elems -> Elem Resto
+
+Resto -> vazio 
+        | ',' Elem Resto
+
+Elem-> int 
+    | str
+
+int -> [0-9]+""",
     
     "Pascal_sub": """Program -> StmtList
 
@@ -130,8 +137,37 @@ Ficheiro -> '[' texto texto ']'
 
 texto -> '"' [^"]+ '"'
 """,
+    "SQL": """SQuery         -> Query number ListaIds 'VALUES' ListaLinhas
 
-    "SQL":"""SQuery -> Query number ListaIds ListaLinhas
+Query          -> 'SELECT' Colunas 'FROM' id
+
+Colunas        -> '*' 
+                | ListaColunas
+
+ListaColunas   -> id ListaColunas_P
+ListaColunas_P -> ',' id ListaColunas_P 
+                | ε
+
+ListaIds       -> id ListaIds_P
+ListaIds_P     -> id ListaIds_P 
+                | ε
+
+ListaLinhas    -> ListaVal ListaLinhas_P
+ListaLinhas_P  -> 'SEP' ListaVal ListaLinhas_P 
+                | ε
+
+ListaVal       -> Coluna ListaVal_P
+ListaVal_P     -> Coluna ListaVal_P 
+                | ε
+
+Coluna         -> number 
+                | id
+
+id             -> [a-zA-Z_][a-zA-Z0-9_]*
+number         -> [0-9]+
+""",
+
+    "SQL Conflituosa":"""SQuery -> Query number ListaIds ListaLinhas
 
 Query -> 'SELECT' Colunas 'FROM' id
 
@@ -156,18 +192,14 @@ Coluna -> number
 id -> [a-zA-Z_][a-zA-Z0-9_]*
 number -> [0-9]+""",
 
-        "SExp": """Sexp   -> Exp '.'
-
-Exp    -> number 
-        | '(' Funcao ')'
-
-Funcao -> '+' Lista 
-        | '*' Lista
-
-Lista  -> Lista Exp 
-        | ε
-        
-number       -> [0-9]+
+        "SExp": """Sexp   --> Exp '.'
+Exp    --> number
+         | '(' Funcao ')'
+Funcao --> '+' Lista
+         | '*' Lista
+Lista  --> Lista Exp
+         | ε
+number -> [0-9]+
         """,
 
     "S9 Bottom-Up":"""S      -> Exp '.'
@@ -180,7 +212,30 @@ Funcao -> '+' Lista
 
 Lista  -> Exp Lista 
         | ε
-number -> [0-9]+"""
+number -> [0-9]+""",
+
+    "JSON": """JSON          -> Value
+
+Value         -> Object
+               | Array
+               | string
+               | number
+               | 'true'
+               | 'false'
+               | 'null'
+
+Object        -> '{' Members '}'
+Members       -> Pair Members_Tail
+               | ε
+Pair          -> string ':' Value
+Members_Tail  -> ',' Pair Members_Tail
+               | ε
+
+Array         -> '[' Elements ']'
+Elements      -> Value Elements_Tail
+               | ε
+Elements_Tail -> ',' Value Elements_Tail
+               | ε """
 }
 
 @app.route('/', methods=['GET', 'POST'])
@@ -209,7 +264,8 @@ def index():
             codigo_parser = gerar_codigo_parser(g, tab)
             
             resultado = {
-                'gramatica': g, 'tabela': tab, 'conflitos': conf, 'arvore': None
+                'gramatica': g, 'tabela': tab, 'conflitos': conf, 'arvore': None,
+                'first': f, 'follow': fol
             }
 
             # Se o utilizador escreveu uma frase, tentamos gerar a árvore

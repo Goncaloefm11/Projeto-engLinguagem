@@ -139,6 +139,51 @@
                         <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
                     {% endif %}
                 </div>
+                
+
+                <div class="section">
+                    <h3>Conjuntos First e Follow</h3>
+                    <div class="flex-row" style="align-items: flex-start;">
+                        <div class="flex-grow">
+                            <h4>First</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Não-Terminal</th>
+                                        <th>Conjunto First</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for nt, f_set in resultado.first.items() %}
+                                    <tr>
+                                        <td><strong>{{ nt }}</strong></td>
+                                        <td>{ {{ f_set|join(', ') }} }</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex-grow">
+                            <h4>Follow</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Não-Terminal</th>
+                                        <th>Conjunto Follow</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for nt, fol_set in resultado.follow.items() %}
+                                    <tr>
+                                        <td><strong>{{ nt }}</strong></td>
+                                        <td>{ {{ fol_set|join(', ') }} }</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="section">
                     <h3>Tabela de Parsing LL(1)</h3>
