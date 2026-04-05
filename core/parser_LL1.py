@@ -129,13 +129,21 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
     
     prox_simb = input_tokens.pop(0)
 
+    def resolver_lookahead(nt_atual):
+        linha = tabela.get(nt_atual, {})
+        candidatos = [prox_simb.get('type')] + prox_simb.get('candidates', [])
+        for c in candidatos:
+            if c in linha:
+                return c
+        return prox_simb.get('type')
+
     def parse(nt_atual):
         nonlocal prox_simb
         no = {'name': nt_atual, 'children': []}
         
         # Se for um Terminal esperado
         if nt_atual in gramatica['terminais']:
-            if nt_atual == prox_simb['type']:
+            if nt_atual == prox_simb['type'] or nt_atual in prox_simb.get('candidates', []):
                 no['name'] = nt_atual
                 if input_tokens:
                     prox_simb = input_tokens.pop(0)
@@ -144,7 +152,7 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
 
         # Se for um Não-Terminal
         if nt_atual in gramatica['nao_terminais']:
-            tipo_token = prox_simb['type']
+            tipo_token = resolver_lookahead(nt_atual)
             
             # Se o token não está na tabela para este NT
             if tipo_token not in tabela.get(nt_atual, {}):
@@ -159,8 +167,9 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
             # Processa os símbolos da produção
             for simbolo in producao:
                 filho = parse(simbolo)
-                if filho:
-                    no['children'].append(filho)
+                if not filho:
+                    return None
+                no['children'].append(filho)
             
             return no
         
@@ -168,8 +177,76 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
 
     simbolo_inicial = gramatica['inicial']
     arvore_final = parse(simbolo_inicial)
+    if not arvore_final:
+        return None
+
+    # A frase só é aceite se o parser consumir toda a entrada.
+    if prox_simb['type'] != '$':
+        return None
     
     return arvore_final
+
+
+def gerar_arvore_derivacao_com_erro(tokens, gramatica, tabela):
+    input_tokens = list(tokens)
+    if not input_tokens or input_tokens[-1]['type'] != '$':
+        input_tokens.append({'type': '$', 'value': '$'})
+
+    prox_simb = input_tokens.pop(0)
+
+    def resolver_lookahead(nt_atual):
+        linha = tabela.get(nt_atual, {})
+        candidatos = [prox_simb.get('type')] + prox_simb.get('candidates', [])
+        for c in candidatos:
+            if c in linha:
+                return c
+        return prox_simb.get('type')
+
+    def parse(nt_atual):
+        nonlocal prox_simb
+        no = {'name': nt_atual, 'children': []}
+
+        if nt_atual in gramatica['terminais']:
+            if nt_atual == prox_simb['type'] or nt_atual in prox_simb.get('candidates', []):
+                no['name'] = nt_atual
+                if input_tokens:
+                    prox_simb = input_tokens.pop(0)
+                return no, None
+            return None, f"Token inesperado '{prox_simb['value']}', esperado '{nt_atual}'."
+
+        if nt_atual in gramatica['nao_terminais']:
+            tipo_token = resolver_lookahead(nt_atual)
+            if tipo_token not in tabela.get(nt_atual, {}):
+                esperados = sorted(tabela.get(nt_atual, {}).keys())
+                return None, (
+                    f"Sem produção para {nt_atual} com lookahead '{tipo_token}'. "
+                    f"Esperado um de: {', '.join(esperados) if esperados else '(nenhum)'}"
+                )
+
+            producao = tabela[nt_atual][tipo_token]
+            if producao == ['ε']:
+                no['children'].append({'name': 'ε'})
+                return no, None
+
+            for simbolo in producao:
+                filho, erro = parse(simbolo)
+                if erro:
+                    return None, erro
+                no['children'].append(filho)
+
+            return no, None
+
+        return None, f"Símbolo desconhecido na gramática: {nt_atual}"
+
+    simbolo_inicial = gramatica['inicial']
+    arvore_final, erro = parse(simbolo_inicial)
+    if erro:
+        return None, erro
+
+    if prox_simb['type'] != '$':
+        return None, f"Tokens extra após parsing: '{prox_simb['value']}'"
+
+    return arvore_final, None
 
 def arvore_para_texto(nodo, nivel=0):
     """Gera uma representação textual indentada da árvore."""
