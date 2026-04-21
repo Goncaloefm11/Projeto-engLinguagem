@@ -12,14 +12,14 @@ def gerar_codigo_parser(gramatica, tabela):
         "def rec_term(esperado):",
         "    global prox_simb",
         "    if prox_simb and prox_simb['type'] == esperado:",
-        "       no_folha = {'name': prox_simb['value']}",  # CRIA O NÓ
-        "       prox_simb = lexer.token()",
-        "       return no_folha",    #RETORNA O NÓ FOLHA
+        "        no_folha = {'name': prox_simb['value']}  # CRIA O NÓ",
+        "        prox_simb = lexer.token()",
+        "        return no_folha",
         "    else:",
-        "       parser_error(prox_simb)",
-        "       prox_simb = ('erro', '', 0, 0)",
-        "       return None",        # Retorna None em caso de erro
-        "--------------------------------------------------------"
+        "        parser_error(prox_simb)",
+        "        prox_simb = ('erro', '', 0, 0)",
+        "        return None",
+        "# --------------------------------------------------------",
         ""
     ]
 
@@ -48,25 +48,30 @@ def gerar_codigo_parser(gramatica, tabela):
                 codigo.append(f"        print('{nt} -> ε')")
                 codigo.append("        no_atual['children'].append({'name': 'ε'})") # Adiciona o epsilon aos filhos
             else:
-                for j, simbolo in enumerate(prod): #enumerate para ter id único de cada símbolo
+                for j, simbolo in enumerate(prod): # enumerate para ter id único de cada símbolo
                     if simbolo in gramatica['nao_terminais']:
-                        codigo.append(f"        rec_{simbolo}()")
-                        codigo.append(f"        no_atual['children'].append(filho_{j})")
+                        # CORREÇÃO: Capturar o filho e adicionar à árvore
+                        codigo.append(f"        filho_{j} = rec_{simbolo}()")
+                        codigo.append(f"        if filho_{j}: no_atual['children'].append(filho_{j})")
                     else:
-                        # Limpa aspas do símbolo terminal (lógica do Gonçalo)
+                        # CORREÇÃO: Limpar aspas com segurança e capturar/adicionar o filho
                         if len(simbolo) >= 2 and simbolo[0] == "'" and simbolo[-1] == "'":
                             s_clean = simbolo[1:-1]
                         else:
                             s_clean = simbolo
-                        
-                        # Captura o retorno do terminal e adiciona aos filhos (lógica da Eduarda corrigida)
                         codigo.append(f"        filho_{j} = rec_term({repr(s_clean)})")
                         codigo.append(f"        if filho_{j}: no_atual['children'].append(filho_{j})")
                     
                 # 2. No FINAL, imprimimos a regra completa numa só linha
                 producao_texto = " ".join(prod)
                 codigo.append(f"        print('{nt} -> {producao_texto}')")
+            
+            # CORREÇÃO: Retornar o nó se entrou nesta condição (construção da AST)
+            codigo.append("        return no_atual")
         
-        codigo.append("    else: parser_error(prox_simb)\n")
+        # CORREÇÃO: Fallback final caso nenhuma condição se verifique
+        codigo.append("    else:")
+        codigo.append("        parser_error(prox_simb)")
+        codigo.append("        return None\n")
 
     return "\n".join(codigo)
