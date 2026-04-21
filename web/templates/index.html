@@ -57,6 +57,7 @@
 
     <div class="container">
         <form method="POST" id="mainForm">
+            <input type="hidden" name="acao" id="acaoInput" value="analisar">
             <div class="flex-row">
                 <div class="flex-grow">
                     <label><strong>Gramática (Formato: NT -> prod1 | prod2):</strong></label>
@@ -99,6 +100,20 @@
         </form>
 
         {% if resultado %}
+            {% if resultado.erro_frase %}
+            <div style="margin-top: 20px;">
+                <div class="error-box">
+                    <strong>Erro no parsing da frase:</strong> {{ resultado.erro_frase }}
+                </div>
+                {% if resultado.frase_sugestao %}
+                <button id="btnFraseExemplo" type="button" style="background-color:#e67e22; margin-top: 10px;">Usar Frase Simples de Exemplo</button>
+                <p style="font-size: 12px; color: #666; margin-top: 8px;">
+                    Exemplo sugerido: <strong>{{ resultado.frase_sugestao }}</strong>
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
+
             {% if resultado.erro %}
                 <div class="section">
                     <div class="error-box">
@@ -114,6 +129,11 @@
                         <ul class="conflito-list">
                             {% for c in resultado.conflitos %} <li>{{ c }}</li> {% endfor %}
                         </ul>
+                            {% if aviso_conflitos_persistentes %}
+                            <div style="margin-top:12px; padding:12px; border-radius:6px; background:#fff5d6; border:1px solid #f0c27b; color:#7d4f00;">
+                                <strong>Aviso:</strong> {{ aviso_conflitos_persistentes }}
+                            </div>
+                            {% endif %}
                         {% if sugestao %}
                         <div style="margin-top:10px;">
                             <button id="btnSugestao" type="button" style="background-color:#e67e22">Sugerir Correções</button>
@@ -144,13 +164,14 @@
                                     var btnFechar = document.getElementById('btnFecharSugestao');
                                     var sugestaoPre = document.getElementById('sugestaoTexto');
                                     var textarea = document.getElementById('gramaticaTexto');
-                                    if (btnAplicar && sugestaoPre && textarea) {
+                                    var acaoInput = document.getElementById('acaoInput');
+                                    var form = document.getElementById('mainForm');
+                                    if (btnAplicar && sugestaoPre && textarea && acaoInput && form) {
                                         btnAplicar.addEventListener('click', function(){
-                                            // Copia o texto da sugestão para a textarea e foca
+                                            // Copia a sugestão e pede ao backend para aplicar+reanalisar.
                                             textarea.value = sugestaoPre.innerText.trim();
-                                            textarea.focus();
-                                            // Fecha a caixa de sugestão
-                                            box.style.display = 'none';
+                                            acaoInput.value = 'aplicar_sugestao';
+                                            form.submit();
                                         });
                                     }
                                     if (btnFechar) {
@@ -291,6 +312,20 @@
                 document.getElementById('fraseInput').value = frases_exemplo[val];
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var btnFraseExemplo = document.getElementById('btnFraseExemplo');
+            if (!btnFraseExemplo) return;
+
+            var inputFrase = document.getElementById('fraseInput');
+            if (!inputFrase) return;
+
+            var fraseSugerida = {{ (resultado.frase_sugestao if resultado and resultado.frase_sugestao else '')|tojson }};
+            btnFraseExemplo.addEventListener('click', function () {
+                inputFrase.value = fraseSugerida;
+                inputFrase.focus();
+            });
+        });
 
         // Zoom para Mermaid
         let currentZoom = 1;
