@@ -51,7 +51,8 @@ def carregar_gramatica_da_string(texto):
         'terminais': set(),
         'nao_terminais': set(),
         'producoes': {},
-        'inicial': None
+        'inicial': None,
+        'literais': set()
     }
 
     raw_lines = texto.splitlines()
@@ -75,12 +76,25 @@ def carregar_gramatica_da_string(texto):
             if not simbolos:
                 simbolos = ['ε']
 
-            gramatica['producoes'].setdefault(nt, []).append(simbolos)
-
-            # identificar terminais (o que não está na lista de Não-Terminais)
+            # Normalizar símbolos das produções: se for um literal escrito entre
+            # aspas simples ('[') converte para o valor interior, e marca como
+            # literal. Mantemos também terminais regex tal como estão.
+            simbolos_norm = []
             for s in simbolos:
-                if s != 'ε' and s not in gramatica['nao_terminais']:
-                    gramatica['terminais'].add(s)
+                if s == 'ε':
+                    simbolos_norm.append(s)
+                    continue
+                if len(s) >= 2 and s[0] == "'" and s[-1] == "'":
+                    s_clean = s[1:-1]
+                    simbolos_norm.append(s_clean)
+                    gramatica['literais'].add(s_clean)
+                    gramatica['terminais'].add(s_clean)
+                else:
+                    simbolos_norm.append(s)
+                    if s not in gramatica['nao_terminais']:
+                        gramatica['terminais'].add(s)
+
+            gramatica['producoes'].setdefault(nt, []).append(simbolos_norm)
 
     # garantir que ε está nos terminais (usado internamente)
     gramatica['terminais'] = list(gramatica['terminais'] | {'ε'})

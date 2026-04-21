@@ -33,8 +33,16 @@ def gerar_codigo_parser(gramatica, tabela):
         for i, (term, prod) in enumerate(caminhos.items()):
             condicao = "if" if i == 0 else "elif"
             # O terminal '$' representa o fim da entrada
-            t_cond = "None" if term == "$" else f"'{term}'"
-            
+            if term == "$":
+                t_cond = "None"
+            else:
+                # Se for um literal escrito como '\'x\'' na gramática, limpamos as aspas externas
+                if len(term) >= 2 and term[0] == "'" and term[-1] == "'":
+                    cleaned = term[1:-1]
+                else:
+                    cleaned = term
+                t_cond = repr(cleaned)
+
             codigo.append(f"    {condicao} prox_simb and prox_simb['type'] == {t_cond}:")
             if prod == ['ε']:
                 codigo.append(f"        print('{nt} -> ε')")
@@ -45,19 +53,20 @@ def gerar_codigo_parser(gramatica, tabela):
                         codigo.append(f"        rec_{simbolo}()")
                         codigo.append(f"        no_atual['children'].append(filho_{j})")
                     else:
-                        s_limpo = simbolo.replace("'", "")
-                        codigo.append(f"        rec_term('{s_limpo}')")
-                        codigo.append(f"        no_atual['children'].append(filho_{j})")
+                        # Limpa aspas do símbolo terminal (lógica do Gonçalo)
+                        if len(simbolo) >= 2 and simbolo[0] == "'" and simbolo[-1] == "'":
+                            s_clean = simbolo[1:-1]
+                        else:
+                            s_clean = simbolo
+                        
+                        # Captura o retorno do terminal e adiciona aos filhos (lógica da Eduarda corrigida)
+                        codigo.append(f"        filho_{j} = rec_term({repr(s_clean)})")
+                        codigo.append(f"        if filho_{j}: no_atual['children'].append(filho_{j})")
                     
                 # 2. No FINAL, imprimimos a regra completa numa só linha
                 producao_texto = " ".join(prod)
                 codigo.append(f"        print('{nt} -> {producao_texto}')")
-            
-            # No fim de cada ramo (if/elif), retorna o nó construído
-            codigo.append("        return no_atual")
         
-        codigo.append("    else:")
-        codigo.append("        parser_error(prox_simb)")
-        codigo.append("        return None\n")
+        codigo.append("    else: parser_error(prox_simb)\n")
 
     return "\n".join(codigo)

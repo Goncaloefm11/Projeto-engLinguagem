@@ -100,24 +100,31 @@ def gerar_tabela_ll1(gramatica, firsts, follows):
     tabela = {}
     conflitos = []
 
+    def _clean(sym):
+        if isinstance(sym, str) and len(sym) >= 2 and sym[0] == "'" and sym[-1] == "'":
+            return sym[1:-1]
+        return sym
+
     for nt in gramatica['nao_terminais']:
         tabela[nt] = {}
         for prod in gramatica['producoes'][nt]:
             # Calculamos o FIRST da sequência da produção atual
             first_da_prod = obter_first_sequencia(prod, firsts, gramatica['terminais'])
-            
+
             # Para cada terminal no FIRST da produção, preenchemos a tabela
             for terminal in first_da_prod - {'ε'}:
-                if terminal in tabela[nt]:
+                key = _clean(terminal)
+                if key in tabela[nt]:
                     conflitos.append(f"Conflito FIRST/FIRST em {nt} com terminal '{terminal}'")
-                tabela[nt][terminal] = prod
-            
+                tabela[nt][key] = prod
+
             # Se a produção for anulável (tem ε), usamos o FOLLOW
             if 'ε' in first_da_prod:
                 for terminal in follows[nt]:
-                    if terminal in tabela[nt]:
+                    key = _clean(terminal)
+                    if key in tabela[nt]:
                         conflitos.append(f"Conflito FIRST/FOLLOW em {nt} com terminal '{terminal}'")
-                    tabela[nt][terminal] = prod
+                    tabela[nt][key] = prod
 
     return tabela, conflitos
 
@@ -148,7 +155,10 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
                 if input_tokens:
                     prox_simb = input_tokens.pop(0)
                 return no
-            return None # Não casou
+            # Debug: devolve informação mais completa sobre o token e o que era esperado
+            return None, (f"Token inesperado valor='{prox_simb.get('value')}', "
+                          f"type={repr(prox_simb.get('type'))}, "
+                          f"candidates={prox_simb.get('candidates')} ; esperado {repr(nt_atual)}")
 
         # Se for um Não-Terminal
         if nt_atual in gramatica['nao_terminais']:
@@ -287,3 +297,23 @@ def arvore_para_mermaid(nodo):
         percorrer(nodo)
         
     return "\n".join(linhas)
+
+
+def arvore_para_producoes_preordem(nodo):
+    """Retorna uma lista de strings com as produções em ordem pré-ordem (top-down).
+
+    Cada entrada tem a forma: NT -> simb1 simb2 ...
+    """
+    res = []
+    if not nodo:
+        return res
+
+    # Se o nó tem filhos, a sua produção é o nome dos filhos
+    children = nodo.get('children', [])
+    if children:
+        prod_rhs = ' '.join(str(c.get('name')) for c in children)
+        res.append(f"{nodo.get('name')} -> {prod_rhs}")
+        for c in children:
+            res.extend(arvore_para_producoes_preordem(c))
+
+    return res
