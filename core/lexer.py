@@ -39,19 +39,7 @@ class Lexer:
         self.gramatica = gramatica
         self.terminais = gramatica.get('terminais', [])
         self.producoes = gramatica.get('producoes', {})
-        self._preparar_literals()
-    
-    def _preparar_literals(self):
-        """Extrai e ordena os literais por tamanho (maior primeiro)."""
-        self.literais = []
-        for t in self.terminais:
-            if len(t) >= 2 and t[0] == "'" and t[-1] == "'":
-                lit = t[1:-1]
-                if lit and lit != 'ε':
-                    self.literais.append(lit)
-        
-        # Ordena por tamanho descendente para evitar conflitos na separação
-        self.literais.sort(key=len, reverse=True)
+        self.literais = gramatica.get('literais', [])
     
     def _separar_com_literals(self, frase):
         """
@@ -63,8 +51,9 @@ class Lexer:
         if not self.literais:
             return frase.split()
         
-        # Cria padrão regex para separar por literais
-        pattern = "(" + "|".join(re.escape(l) for l in self.literais) + ")"
+        # Cria padrão regex para separar por literais (ordem por tamanho decrescente)
+        literais_ordenados = sorted(set(self.literais), key=len, reverse=True)
+        pattern = "(" + "|".join(re.escape(l) for l in literais_ordenados) + ")"
         partes = []
         
         for pedaco in re.split(pattern, frase):
@@ -73,7 +62,6 @@ class Lexer:
             if pedaco in self.literais:
                 partes.append(pedaco)
             else:
-                # Divide o pedaço não-literal por espaços
                 partes.extend(pedaco.split())
         
         return partes
@@ -83,7 +71,7 @@ class Lexer:
         Encontra todos os tipos de terminais que podem corresponder a um token.
         
         Verifica em ordem:
-        1. Correspondência exata com literais
+        1. Correspondência exata com terminais
         2. Correspondência com expressões regulares nas produções
         
         Returns:
@@ -91,21 +79,16 @@ class Lexer:
         """
         candidatos = []
         
-        # 1. Verifica correspondência exata com literais
+        # 1. Verifica correspondência exata com terminais
         if token_str in self.terminais:
             candidatos.append(token_str)
-        
-        # Verifica com aspas (para literais)
-        literal_com_aspas = f"'{token_str}'"
-        if literal_com_aspas in self.terminais and literal_com_aspas not in candidatos:
-            candidatos.append(literal_com_aspas)
         
         # 2. Procura por padrões regex nas regras lexicais
         for _, producoes_nt in self.producoes.items():
             for prod in producoes_nt:
-                # Uma regra lexical tem exatamente uma produção com um token
+                # Uma regra lexical tem exatamente uma produção com um padrão
                 if len(prod) == 1:
-                    padrao = prod[0].strip("'")
+                    padrao = prod[0]
                     try:
                         # fullmatch garante que o padrão corresponde à string toda
                         if re.fullmatch(padrao, token_str) and prod[0] not in candidatos:
@@ -115,6 +98,15 @@ class Lexer:
                         pass
         
         return candidatos if candidatos else None
+    
+    def _normalizar_candidatos(self, candidatos):
+        """Remove aspas externas dos candidatos (ex: "']'" -> "]")."""
+        def _clean(sym):
+            if isinstance(sym, str) and len(sym) >= 2 and sym[0] == "'" and sym[-1] == "'":
+                return sym[1:-1]
+            return sym
+        
+        return [_clean(c) for c in candidatos]
     
     def tokenizar(self, frase):
         """
@@ -139,11 +131,14 @@ class Lexer:
                 erro_msg = f"Token '{parte}' não reconhecido: não é um literal e não dá match nenhum padrão lexical."
                 return None, erro_msg
             
-            # Cria o token com o primeiro candidato como tipo principal
+            # Normaliza candidatos (remove aspas externas)
+            candidatos_normalizados = self._normalizar_candidatos(candidatos)
+            
+            # Cria o token com o primeiro candidato normalizado como tipo
             token = {
-                'type': candidatos[0],
+                'type': candidatos_normalizados[0],
                 'value': parte,
-                'candidates': candidatos
+                'candidates': candidatos_normalizados
             }
             tokens.append(token)
         
@@ -163,7 +158,7 @@ class Lexer:
         if erro:
             return None, erro
         
-        # Adiciona EOF token
+        # Adiciona EOF token normalizado
         tokens.append({
             'type': '$',
             'value': '$',

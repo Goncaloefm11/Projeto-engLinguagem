@@ -510,18 +510,13 @@ def index():
                 frase_teste = frase_entrada.strip() or gerar_frase_exemplo_simples(g)
                 tokens_lista, erro_tokenizacao = tokenizar_frase(frase_teste, g)
                 if erro_tokenizacao:
-                    resultado['exec_output'] = f"Erro na tokenização de teste: {erro_tokenizacao}"
+                    resultado['exec_output'] = f"Erro na tokenização: {erro_tokenizacao}"
                 else:
-                    # Executa o parser gerado diretamente (com o lexer simples) e
-                    # mostra a saída textual produzida pelo parser — isto é o
-                    # comportamento "como antes" (produções impressas em post-order).
-                    out, err = _run_parser_with_lexer(codigo_parser, tokens_lista, g.get('inicial'))
-                    combined = ''
-                    if out:
-                        combined += out
-                    if err:
-                        combined += ('\n--- STDERR ---\n' + err)
-                    resultado['exec_output'] = combined or '(sem saída)'
+                    # Mostra apenas a sequência de tokens em formato simples
+                    tokens_output = ""
+                    for token in tokens_lista:
+                        tokens_output += f"Token('{token['type']}', '{token['value']}')\n"
+                    resultado['exec_output'] = tokens_output
 
             # Se o utilizador escreveu uma frase, tentamos gerar a árvore
             if frase_entrada.strip():
