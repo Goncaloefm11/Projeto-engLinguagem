@@ -144,7 +144,7 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
         # Se for um Terminal esperado
         if nt_atual in gramatica['terminais']:
             if nt_atual == prox_simb['type'] or nt_atual in prox_simb.get('candidates', []):
-                no['name'] = nt_atual
+                no['name'] = prox_simb['value']
                 if input_tokens:
                     prox_simb = input_tokens.pop(0)
                 return no
@@ -208,7 +208,7 @@ def gerar_arvore_derivacao_com_erro(tokens, gramatica, tabela):
 
         if nt_atual in gramatica['terminais']:
             if nt_atual == prox_simb['type'] or nt_atual in prox_simb.get('candidates', []):
-                no['name'] = nt_atual
+                no['name'] = prox_simb['value']
                 if input_tokens:
                     prox_simb = input_tokens.pop(0)
                 return no, None

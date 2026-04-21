@@ -2,13 +2,13 @@
 from flask import Flask, render_template, request
 import sys
 import os
-import re
 
 # Adiciona a pasta raiz ao path para conseguirmos importar o 'core'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.loader import carregar_gramatica_da_string
 from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao_com_erro, arvore_para_texto, arvore_para_mermaid
+from core.lexer import Lexer
 
 
 app = Flask(__name__)
@@ -263,62 +263,9 @@ frases_exemplo = {
 
 
 def tokenizar_frase(frase, gramatica):
-    tokens_lista = []
-    terminais = gramatica['terminais']
-    producoes = gramatica['producoes']
-
-    # Permite entradas compactas (ex.: <nome>Joana</nome>, ident="e1">)
-    # separando terminais literais definidos na gramática.
-    literais = []
-    for t in terminais:
-        if len(t) >= 2 and t[0] == "'" and t[-1] == "'":
-            lit = t[1:-1]
-            if lit and lit != 'ε':
-                literais.append(lit)
-
-    # Separa por literais com regex (ordem por tamanho) para nao destruir
-    # tokens maiores (ex.: <agenda>) ao separar tokens curtos (ex.: >).
-    partes = []
-    if literais:
-        pattern = "(" + "|".join(re.escape(l) for l in sorted(set(literais), key=len, reverse=True)) + ")"
-        for pedaco in re.split(pattern, frase):
-            if not pedaco:
-                continue
-            if pedaco in literais:
-                partes.append(pedaco)
-            else:
-                partes.extend(pedaco.split())
-    else:
-        partes = frase.split()
-
-    for t in partes:
-        candidatos = []
-
-        # 1. Correspondencia exata: simbolo literal definido na gramatica.
-        if t in terminais:
-            candidatos.append(t)
-        literal_entre_aspas = f"'{t}'"
-        if literal_entre_aspas in terminais and literal_entre_aspas not in candidatos:
-            candidatos.append(literal_entre_aspas)
-
-        # 2. Procura por padrao regex nas regras lexicais.
-        for _, prods in producoes.items():
-            for prod in prods:
-                if len(prod) == 1:
-                    padrao = prod[0].strip("'")
-                    try:
-                        if re.fullmatch(padrao, t) and prod[0] not in candidatos:
-                            candidatos.append(prod[0])
-                    except re.error:
-                        pass
-
-        # Se ainda nao encontrou tipo, eh erro
-        if not candidatos:
-            return None, f"Token '{t}' não reconhecido: não é um literal e não dá match nenhum padrão lexical."
-
-        tokens_lista.append({'type': candidatos[0], 'value': t, 'candidates': candidatos})
-
-    return tokens_lista, None
+    """Tokeniza uma frase usando o Lexer do core."""
+    lexer = Lexer(gramatica)
+    return lexer.tokenizar(frase)
 
 
 def gerar_frase_exemplo_simples(gramatica, max_depth=30):
