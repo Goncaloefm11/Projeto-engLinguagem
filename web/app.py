@@ -3,12 +3,17 @@ from flask import Flask, render_template, request
 import sys
 import os
 import re
+import io
+import contextlib
+import tempfile
+import types
+import traceback
 
 # Adiciona a pasta raiz ao path para conseguirmos importar o 'core'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.loader import carregar_gramatica_da_string
-from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao_com_erro, arvore_para_texto, arvore_para_mermaid
+from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao_com_erro, arvore_para_texto, arvore_para_mermaid, arvore_para_producoes_preordem
 
 
 app = Flask(__name__)
@@ -269,12 +274,7 @@ def tokenizar_frase(frase, gramatica):
 
     # Permite entradas compactas (ex.: <nome>Joana</nome>, ident="e1">)
     # separando terminais literais definidos na gramática.
-    literais = []
-    for t in terminais:
-        if len(t) >= 2 and t[0] == "'" and t[-1] == "'":
-            lit = t[1:-1]
-            if lit and lit != 'ε':
-                literais.append(lit)
+    literais = gramatica.get('literais', [])
 
     # Separa por literais com regex (ordem por tamanho) para nao destruir
     # tokens maiores (ex.: <agenda>) ao separar tokens curtos (ex.: >).
@@ -297,15 +297,12 @@ def tokenizar_frase(frase, gramatica):
         # 1. Correspondencia exata: simbolo literal definido na gramatica.
         if t in terminais:
             candidatos.append(t)
-        literal_entre_aspas = f"'{t}'"
-        if literal_entre_aspas in terminais and literal_entre_aspas not in candidatos:
-            candidatos.append(literal_entre_aspas)
 
         # 2. Procura por padrao regex nas regras lexicais.
         for _, prods in producoes.items():
             for prod in prods:
                 if len(prod) == 1:
-                    padrao = prod[0].strip("'")
+                    padrao = prod[0]
                     try:
                         if re.fullmatch(padrao, t) and prod[0] not in candidatos:
                             candidatos.append(prod[0])
@@ -316,9 +313,74 @@ def tokenizar_frase(frase, gramatica):
         if not candidatos:
             return None, f"Token '{t}' não reconhecido: não é um literal e não dá match nenhum padrão lexical."
 
-        tokens_lista.append({'type': candidatos[0], 'value': t, 'candidates': candidatos})
+        # Normaliza candidatos: remove aspas externas de literais (ex: "']'" -> "]").
+        def _clean(sym):
+            if isinstance(sym, str) and len(sym) >= 2 and sym[0] == "'" and sym[-1] == "'":
+                return sym[1:-1]
+            return sym
+
+        candidatos_normalizados = [_clean(c) for c in candidatos]
+        chosen = candidatos_normalizados[0]
+
+        tokens_lista.append({'type': chosen, 'value': t, 'candidates': candidatos_normalizados})
 
     return tokens_lista, None
+
+
+def _run_parser_with_lexer(code_str, tokens_list, inicial_nt):
+    """Executa o código do parser gerado numa namespace controlada.
+    Espera que o código defina funções `rec_<NT>()` para cada não-terminal
+    e que use um objeto `lexer` com método `token()` que devolve dicionários
+    como {'type': ..., 'value': ...} ou None no fim.
+
+    Retorna (stdout, stderr).
+    """
+    # Preparar um lexer simples que fornece os tokens em sequence
+    class _SimpleLexer:
+        def __init__(self, tokens):
+            self._tokens = list(tokens)
+            self._i = 0
+
+        def token(self):
+            if self._i >= len(self._tokens):
+                return None
+            t = self._tokens[self._i]
+            self._i += 1
+            return t
+
+    lexer = _SimpleLexer(tokens_list)
+
+    # Namespace controlada para exec
+    globs = {
+        '__builtins__': __builtins__,
+        'lexer': lexer,
+    }
+
+    stdout_buf = io.StringIO()
+    stderr_buf = io.StringIO()
+
+    try:
+        # Exec do código do parser (define funções rec_<NT>)
+        exec(code_str, globs)
+
+        # Inicializar prox_simb e invocar a função inicial
+        globs['prox_simb'] = lexer.token()
+
+        start_fn_name = f"rec_{inicial_nt}"
+        if start_fn_name not in globs:
+            raise RuntimeError(f"Função inicial {start_fn_name} não encontrada no código do parser gerado.")
+
+        with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
+            try:
+                globs[start_fn_name]()
+            except Exception:
+                # Captura traceback para stderr
+                traceback.print_exc(file=stderr_buf)
+
+    except Exception:
+        traceback.print_exc(file=stderr_buf)
+
+    return stdout_buf.getvalue(), stderr_buf.getvalue()
 
 
 def gerar_frase_exemplo_simples(gramatica, max_depth=30):
@@ -442,6 +504,24 @@ def index():
                 'frase_sugestao': gerar_frase_exemplo_simples(g)
             }
 
+            # Se o utilizador pediu para testar o parser gerado com um Lexer
+            if acao == 'testar_parser' and codigo_parser:
+                frase_teste = frase_entrada.strip() or gerar_frase_exemplo_simples(g)
+                tokens_lista, erro_tokenizacao = tokenizar_frase(frase_teste, g)
+                if erro_tokenizacao:
+                    resultado['exec_output'] = f"Erro na tokenização de teste: {erro_tokenizacao}"
+                else:
+                    # Executa o parser gerado diretamente (com o lexer simples) e
+                    # mostra a saída textual produzida pelo parser — isto é o
+                    # comportamento "como antes" (produções impressas em post-order).
+                    out, err = _run_parser_with_lexer(codigo_parser, tokens_lista, g.get('inicial'))
+                    combined = ''
+                    if out:
+                        combined += out
+                    if err:
+                        combined += ('\n--- STDERR ---\n' + err)
+                    resultado['exec_output'] = combined or '(sem saída)'
+
             # Se o utilizador escreveu uma frase, tentamos gerar a árvore
             if frase_entrada.strip():
                 tokens_lista, erro_tokenizacao = tokenizar_frase(frase_entrada, g)
@@ -473,3 +553,6 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+#para remover a porta nao apagar
+#kill -9 $(lsof -t -i:5000)
