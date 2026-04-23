@@ -5,7 +5,7 @@
     <title>Grammar Playground - GP</title>
     <style>
         /* Estilos base */
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #f4f7f6; color: #333; }
+    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #333; }
         .header { background-color: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .header p { margin: 0; font-size: 14px; opacity: 0.8; }
@@ -30,7 +30,12 @@
         .conflito-list { color: #d63031; font-weight: bold; }
         
         /* Área do Parser Gerado */
-        .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
+    .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
+    /* Código com destaque e ações */
+    .code-block { position: relative; background: #ffffff; color: #2c3e50; border-radius: 6px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 13px; overflow: auto; border:1px solid #e9eef2; max-height:520px; }
+    .code-actions { position: absolute; right: 10px; top: 10px; display:flex; gap:8px; }
+    .code-actions button { background:#1f6feb; padding:6px 10px; border-radius:4px; border:none; color:white; font-weight:600; cursor:pointer; }
+    .code-actions button.secondary { background:#2d3436; }
         
         /* Árvore de Derivação */
         #arvore-canvas { width: 100%; height: 500px; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; overflow: auto; margin-top: 10px; }
@@ -44,8 +49,14 @@
         .zoom-btn:hover { background-color: #2980b9; }
         .zoom-reset-btn { background-color: #95a5a6; }
         .zoom-reset-btn:hover { background-color: #7f8c8d; }
-        .mermaid-wrapper { border: 1px solid #eee; background: white; padding: 20px; border-radius: 4px; overflow: auto; min-height: 600px; display: flex; align-items: center; justify-content: center; }
-        .mermaid { transform-origin: top center; transition: transform 0.2s; }
+    .mermaid-wrapper { border: 1px solid #eee; background: white; padding: 12px; border-radius: 4px; overflow: auto; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+    .mermaid { transform-origin: top center; transition: transform 0.2s; }
+    /* Compact panels side-by-side */
+    .panels { display:flex; gap:16px; align-items:flex-start; }
+    .panel { flex:1; min-width:260px; background:#ffffff; border:1px solid #e9eef2; border-radius:8px; padding:12px; box-shadow: 0 2px 6px rgba(16,24,40,0.04); }
+    .panel-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+    .small-btn { background:#34495e; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:600; }
+    .small-btn.ghost { background:transparent; color:#34495e; border:1px solid #e1e8ee; }
     </style>
 </head>
 <body>
@@ -60,7 +71,7 @@
             <input type="hidden" name="acao" id="acaoInput" value="analisar">
             <div class="flex-row">
                 <div class="flex-grow">
-                    <label><strong>Gramática (Formato: NT -> prod1 | prod2):</strong></label>
+                    <label><strong>Gramática:</strong></label>
                 </div>
                 <div>
                     <label>Exemplos:</label>
@@ -96,7 +107,7 @@
                 <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
             </div>
 
-            <button type="submit">Analisar Tudo</button>
+            <button type="submit">Analisar</button>
         </form>
 
         {% if resultado %}
@@ -180,6 +191,7 @@
                             });
                         </script>
                         {% endif %}
+                        
                     {% else %}
                         <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
                     {% endif %}
@@ -257,62 +269,77 @@
                 {% if resultado.arvore %}
                 <div class="section">
                     <h3>Árvore de Derivação</h3>
-                    
-                    <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 300px;">
-                            <h4>Formato Textual</h4>
-                            <textarea readonly class="parser-code" style="height: 300px; background-color: #f8f9fa; color: #2c3e50; border: 1px solid #ddd;">{{ resultado.arvore_texto | safe }}</textarea>
-                        </div>
-                        {% if resultado.producoes_preorder %}
-                        <div style="flex: 1; min-width: 300px;">
-                            <h4>Produções (top-down)</h4>
-                            <textarea readonly class="parser-code" style="height: 300px; background-color: #f8f9fa; color: #2c3e50; border: 1px solid #ddd;">{{ resultado.producoes_preorder | join('\n') }}</textarea>
-                        </div>
-                        {% endif %}
-                        
-                    </div>
 
-                    <h4 style="margin-top: 20px;">Visualização Mermaid</h4>
-                    <div class="zoom-container">
-                        <button type="button" class="zoom-btn" onclick="zoomMermaid(1.2)">+ Zoom In</button>
-                        <button type="button" class="zoom-btn" onclick="zoomMermaid(0.8)">- Zoom Out</button>
-                        <button type="button" class="zoom-btn zoom-reset-btn" onclick="resetZoomMermaid()">Reset</button>
-                    </div>
-                    <div class="mermaid-wrapper" id="mermaid-container">
-                        <pre class="mermaid" id="mermaid-diagram" style="display: inline-block; width: 100%;">{{ resultado.arvore_mermaid | safe }}</pre>
+                    <div class="panels">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <strong>Formato Textual</strong>
+                                <div>
+                                    <button class="small-btn" id="btnToggleTexto">Mostrar</button>
+                                    <button class="small-btn ghost" id="btnDownloadTexto">Descarregar</button>
+                                </div>
+                            </div>
+                            <div id="panel-texto" style="display:none;">
+                                <pre id="arvore-texto-pre" style="white-space:pre-wrap; font-family: 'Fira Code', monospace; background:#fbfdff; border:1px solid #eef3f7; padding:10px; border-radius:6px; max-height:520px; overflow:auto;">{{ resultado.arvore_texto | safe }}</pre>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <strong>Visualização Mermaid</strong>
+                                <div>
+                                    <button class="small-btn" id="btnToggleMermaid">Mostrar</button>
+                                    <button class="small-btn ghost" id="btnDownloadMermaid">Descarregar</button>
+                                </div>
+                            </div>
+                            <div id="panel-mermaid" style="display:none;">
+                                <div class="zoom-container" style="margin-top:8px; margin-bottom:8px;">
+                                    <button type="button" class="zoom-btn" onclick="zoomMermaid(1.2)">+ Zoom In</button>
+                                    <button type="button" class="zoom-btn" onclick="zoomMermaid(0.8)">- Zoom Out</button>
+                                    <button type="button" class="zoom-btn zoom-reset-btn" onclick="resetZoomMermaid()">Reset</button>
+                                </div>
+                                <div class="mermaid-wrapper" id="mermaid-render-area">
+                                    <!-- Mermaid será renderizado aqui quando o utilizador pedir -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
 
                 {% if codigo_parser %}
                 <div class="section">
-                    <h3>Parser Recursivo Descendente Gerado</h3>
-                    <textarea readonly class="parser-code">{{ codigo_parser }}</textarea>
-                    <p style="font-size: 12px;">Podes copiar este código para um ficheiro .py e testar com um Lexer.</p>
-                    <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
-                        <button id="btnTestarParser" type="button" style="background-color:#2980b9">Testar com Lexer</button>
-                        <span style="font-size:12px; color:#666;">(Usa a frase de entrada acima ou uma frase de exemplo se estiver vazia.)</span>
-                    </div>
-                    {% if resultado and resultado.exec_output %}
-                    <div style="margin-top:12px;">
-                        <h4>Saída do Teste</h4>
-                        <textarea readonly class="parser-code" style="height:200px; background-color:#f8f9fa; color:#2c3e50; border:1px solid #ddd;">{{ resultado.exec_output }}</textarea>
-                    </div>
-                    {% endif %}
+                    <h3>Parser Recursivo Descendente & Visitor</h3>
+                    <div class="panels">
+                        <div class="panel">
+                            <div class="panel-header">
+                                <strong>Parser</strong>
+                                <div>
+                                    <button class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
+                                    <button class="small-btn ghost" id="btnCopyParser">Copiar</button>
+                                        {% if resultado and resultado.ontology_filename %}
+                                            <a class="small-btn ghost" href="/download_generated/{{ resultado.ontology_filename }}">Ontologia (.ttl)</a>
+                                        {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <pre class="code-block"><code id="parser-code-block" class="language-python">{{ codigo_parser }}</code></pre>
+                            </div>
+                        </div>
 
-                    <script>
-                        document.addEventListener('DOMContentLoaded', function(){
-                            var btn = document.getElementById('btnTestarParser');
-                            var acaoInput = document.getElementById('acaoInput');
-                            var form = document.getElementById('mainForm');
-                            if (btn && acaoInput && form) {
-                                btn.addEventListener('click', function(){
-                                    acaoInput.value = 'testar_parser';
-                                    form.submit();
-                                });
-                            }
-                        });
-                    </script>
+                        <div class="panel">
+                            <div class="panel-header">
+                                <strong>Visitor </strong>
+                                <div>
+                                    <button class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
+                                    <button class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
+                                </div>
+                            </div>
+                            <div>
+                                <pre class="code-block"><code id="visitor-code-block" class="language-python">{{ codigo_visitor }}</code></pre>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 {% endif %}
             {% endif %}
@@ -320,8 +347,13 @@
     </div>
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+        // Não inicializar automaticamente; iremos renderizar sob pedido (lazy)
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+        // Expor a biblioteca mermaid ao escopo global para uso em scripts não-module
+        window.mermaidLib = mermaid;
     </script>
+    <!-- Highlight.js CSS for Python-like appearance -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
     
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
@@ -361,19 +393,142 @@
         let currentZoom = 1;
         function zoomMermaid(factor) {
             currentZoom *= factor;
-            const diagram = document.getElementById('mermaid-diagram');
-            if (diagram) {
-                diagram.style.transform = `scale(${currentZoom})`;
+            const area = document.getElementById('mermaid-render-area');
+            if (area && area.firstElementChild) {
+                area.firstElementChild.style.transform = `scale(${currentZoom})`;
+                area.firstElementChild.style.transformOrigin = 'top left';
             }
         }
 
         function resetZoomMermaid() {
             currentZoom = 1;
-            const diagram = document.getElementById('mermaid-diagram');
-            if (diagram) {
-                diagram.style.transform = 'scale(1)';
-            }
+            const area = document.getElementById('mermaid-render-area');
+            if (area && area.firstElementChild) area.firstElementChild.style.transform = 'scale(1)';
         }
+
+        // Handlers para mostrar / descarregar os painéis (texto e mermaid)
+        document.addEventListener('DOMContentLoaded', function(){
+            const btnTxt = document.getElementById('btnToggleTexto');
+            const panelTxt = document.getElementById('panel-texto');
+            const preTxt = document.getElementById('arvore-texto-pre');
+            const btnDlTxt = document.getElementById('btnDownloadTexto');
+
+            if (btnTxt && panelTxt) {
+                btnTxt.addEventListener('click', function(){
+                    const showing = panelTxt.style.display !== 'none';
+                    panelTxt.style.display = showing ? 'none' : 'block';
+                    btnTxt.textContent = showing ? 'Mostrar' : 'Esconder';
+                });
+            }
+            if (btnDlTxt && preTxt) {
+                btnDlTxt.addEventListener('click', function(){
+                    const txt = preTxt ? preTxt.innerText : '';
+                    const blob = new Blob([txt], {type: 'text/plain;charset=utf-8'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url; a.download = 'arvore_textual.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                });
+            }
+
+            const btnMer = document.getElementById('btnToggleMermaid');
+            const panelMer = document.getElementById('panel-mermaid');
+            const btnDlMer = document.getElementById('btnDownloadMermaid');
+            let mermaidRendered = false;
+
+            if (btnMer && panelMer) {
+                btnMer.addEventListener('click', async function(){
+                    const showing = panelMer.style.display !== 'none';
+                    if (showing) {
+                        panelMer.style.display = 'none';
+                        btnMer.textContent = 'Mostrar';
+                        return;
+                    }
+                    panelMer.style.display = 'block';
+                    btnMer.textContent = 'Esconder';
+
+                    // Render mermaid lazily (apenas na primeira abertura)
+                    if (!mermaidRendered) {
+                        mermaidRendered = true;
+                        const mermaidSrc = `{{ resultado.arvore_mermaid | replace('\n', '\\n') | replace('\r','') | safe }}`;
+                        try {
+                            const renderArea = document.getElementById('mermaid-render-area');
+                            if (!renderArea) return;
+                            // Gera um id único para o svg
+                            const svgId = 'm' + Date.now();
+                            const { svg } = await window.mermaidLib.render(svgId, mermaidSrc);
+                            renderArea.innerHTML = svg;
+                        } catch (e) {
+                            const renderArea = document.getElementById('mermaid-render-area');
+                            if (renderArea) renderArea.innerText = 'Erro ao renderizar Mermaid: ' + e;
+                        }
+                    }
+                });
+            }
+
+            if (btnDlMer) {
+                btnDlMer.addEventListener('click', function(){
+                    const merText = `{{ resultado.arvore_mermaid | replace('\n', '\\n') | replace('\r','') | safe }}`;
+                    const blob = new Blob([merText], {type: 'text/plain;charset=utf-8'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'arvore.mmd'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                });
+            }
+
+            // Botões para o código do parser gerado (download / copiar / testar)
+            const btnDownloadParser = document.getElementById('btnDownloadParser');
+            const btnCopyParser = document.getElementById('btnCopyParser');
+            const parserCodeElem = document.getElementById('parser-code-block');
+            const acaoInput = document.getElementById('acaoInput');
+            const form = document.getElementById('mainForm');
+
+            if (btnDownloadParser && parserCodeElem) {
+                btnDownloadParser.addEventListener('click', function(){
+                    const code = parserCodeElem ? parserCodeElem.innerText : '';
+                    const blob = new Blob([code], {type: 'text/x-python;charset=utf-8'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'parser_generated.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                });
+            }
+
+            if (btnCopyParser && parserCodeElem) {
+                btnCopyParser.addEventListener('click', function(){
+                    const code = parserCodeElem ? parserCodeElem.innerText : '';
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code);
+                    } else {
+                        // fallback
+                        const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
+                    }
+                });
+            }
+
+            // 'Testar com Lexer' removed — form testing handled via Analysis flow
+
+            // Visitor buttons (download / copy)
+            const btnDownloadVisitor = document.getElementById('btnDownloadVisitor');
+            const btnCopyVisitor = document.getElementById('btnCopyVisitor');
+            const visitorCodeElem = document.getElementById('visitor-code-block');
+
+            if (btnDownloadVisitor && visitorCodeElem) {
+                btnDownloadVisitor.addEventListener('click', function(){
+                    const code = visitorCodeElem ? visitorCodeElem.innerText : '';
+                    const blob = new Blob([code], {type: 'text/x-python;charset=utf-8'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a'); a.href = url; a.download = 'visitor_generated.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                });
+            }
+
+            if (btnCopyVisitor && visitorCodeElem) {
+                btnCopyVisitor.addEventListener('click', function(){
+                    const code = visitorCodeElem ? visitorCodeElem.innerText : '';
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(code);
+                    } else {
+                        const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
+                    }
+                });
+            }
+        });
 
         // Desenho da Árvore com D3.js
         {% if resultado and resultado.arvore %}
@@ -398,6 +553,19 @@
         node.append("text").attr("dy", -10).attr("x", 0).style("text-anchor", "middle").text(d => d.data.name);
         {% endif %}
         
+    </script>
+    <!-- Highlight.js for code syntax coloring -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            try {
+                // Highlight all code blocks (parser and visitor) with language-python
+                var codes = document.querySelectorAll('code.language-python');
+                codes.forEach(function(el){ if (window.hljs) window.hljs.highlightElement(el); });
+            } catch(e) {
+                console.warn('Highlight.js init failed', e);
+            }
+        });
     </script>
 </body>
 </html>

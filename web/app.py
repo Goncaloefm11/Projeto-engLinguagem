@@ -15,6 +15,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from core.loader import carregar_gramatica_da_string
 from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao_com_erro, arvore_para_texto, arvore_para_mermaid, arvore_para_producoes_preordem
 from core.lexer import Lexer
+from core.ontology import gerar_ontologia
+from flask import send_from_directory
 
 
 app = Flask(__name__)
@@ -498,6 +500,63 @@ def index():
             
             from core.generator import gerar_codigo_parser
             codigo_parser = gerar_codigo_parser(g, tab)
+            # Gerar também um esqueleto de Visitor para a árvore
+            try:
+                from core.generator import gerar_codigo_visitor
+                codigo_visitor = gerar_codigo_visitor(g)
+            except Exception:
+                codigo_visitor = ''
+
+            # Se a gramática foi aceite (sem conflitos LL(1)) e temos código gerado,
+            # gravamos automaticamente os ficheiros na pasta 'gerado' do projecto.
+            try:
+                if codigo_parser and not conf:
+                    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    gerado_dir = os.path.join(project_root, 'gerado')
+                    os.makedirs(gerado_dir, exist_ok=True)
+
+                    parser_path = os.path.join(gerado_dir, 'parser_generated.py')
+                    with open(parser_path, 'w', encoding='utf-8') as fp:
+                        fp.write(codigo_parser)
+
+                    # Nota: geração do parser table-driven removida — apenas
+                    # o parser recursivo-descendente é escrito automaticamente.
+
+                    # Se não houve código visitor gerado, tentamos criar via generator
+                    if not codigo_visitor:
+                        try:
+                            codigo_visitor = gerar_codigo_visitor(g)
+                        except Exception:
+                            codigo_visitor = ''
+
+                    if codigo_visitor:
+                        visitor_path = os.path.join(gerado_dir, 'visitor_generated.py')
+                        with open(visitor_path, 'w', encoding='utf-8') as fp:
+                            fp.write(codigo_visitor)
+
+                    # Gerar ontologia Turtle para a gramática (opcional)
+                    try:
+                        ontology_path = os.path.join(gerado_dir, 'grammar.ttl')
+                        gerar_ontologia(g, firsts=f, follows=fol, conflitos=conf, out_path=ontology_path)
+                        resultado['ontology_path'] = ontology_path
+                        resultado['ontology_filename'] = os.path.basename(ontology_path)
+                    except Exception:
+                        # não fatal
+                        pass
+
+                    # Disponibiliza caminhos no resultado para UI se necessário
+                    if resultado is None:
+                        resultado = {}
+                    resultado['gerado_dir'] = gerado_dir
+                    resultado['parser_path'] = parser_path
+                    if codigo_visitor:
+                        resultado['visitor_path'] = visitor_path
+            except Exception:
+                # Não queremos falhar o fluxo principal só porque a escrita falhou.
+                # Guardamos a mensagem de erro em resultado para debug opcional.
+                if resultado is None:
+                    resultado = {}
+                resultado['gerado_error'] = 'Erro ao gravar ficheiros na pasta gerado.'
             
             resultado = {
                 'gramatica': g, 'tabela': tab, 'conflitos': conf, 'arvore': None,
@@ -505,19 +564,9 @@ def index():
                 'frase_sugestao': gerar_frase_exemplo_simples(g)
             }
 
-            # Se o utilizador pediu para testar o parser gerado com um Lexer
-            if acao == 'testar_parser' and codigo_parser:
-                frase_teste = frase_entrada.strip() or gerar_frase_exemplo_simples(g)
-                tokens_lista, erro_tokenizacao = tokenizar_frase(frase_teste, g)
-                if erro_tokenizacao:
-                    resultado['exec_output'] = f"Erro na tokenização: {erro_tokenizacao}"
-                else:
-                    # Mostra apenas a sequência de tokens em formato simples
-                    tokens_output = ""
-                    for token in tokens_lista:
-                        tokens_output += f"Token('{token['type']}', '{token['value']}')\n"
-                    resultado['exec_output'] = tokens_output
-
+            # NOTE: 'Testar com Lexer' feature removed — tokenization/testing
+            # is performed as part of the normal 'Analisar Tudo' flow when a
+            # frase is provided.
             # Se o utilizador escreveu uma frase, tentamos gerar a árvore
             if frase_entrada.strip():
                 tokens_lista, erro_tokenizacao = tokenizar_frase(frase_entrada, g)
@@ -544,8 +593,17 @@ def index():
                            exemplos=EXEMPLOS,
                            frases_exemplo=frases_exemplo,
                            codigo_parser=codigo_parser,
+                           codigo_visitor=codigo_visitor,
                            sugestao=sugestao,
                            aviso_conflitos_persistentes=aviso_conflitos_persistentes)
+
+
+@app.route('/download_generated/<path:filename>', methods=['GET'])
+def download_generated(filename):
+    # Serve files da pasta gerado criada pelo app (seguro o suficiente para dev)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    gerado_dir = os.path.join(project_root, 'gerado')
+    return send_from_directory(gerado_dir, filename, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

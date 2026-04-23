@@ -1,0 +1,76 @@
+@prefix ex: <http://example.org/grammar#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:Conflict a owl:Class .
+
+ex:T_eps a ex:Terminal ;
+    rdfs:label "ε" .
+
+ex:s a ex:Grammar ;
+    rdfs:label "Grammar" ;
+    ex:hasNonTerminal ex:NT_A,
+        ex:NT_B,
+        ex:NT_C,
+        ex:NT_s ;
+    ex:hasProduction ex:A_prod_0,
+        ex:B_prod_0,
+        ex:C_prod_0,
+        ex:s_prod_0 .
+
+ex:A_prod_0 a ex:Production ;
+    rdfs:label "1" ;
+    ex:hasRHSTerminal ex:T_1 ;
+    ex:lhs ex:NT_A .
+
+ex:B_prod_0 a ex:Production ;
+    rdfs:label "1" ;
+    ex:hasRHSTerminal ex:T_1 ;
+    ex:lhs ex:NT_B .
+
+ex:C_prod_0 a ex:Production ;
+    rdfs:label "3" ;
+    ex:hasRHSTerminal ex:T_3 ;
+    ex:lhs ex:NT_C .
+
+ex:Grammar a owl:Class .
+
+ex:T_3 a ex:Terminal ;
+    rdfs:label "3" .
+
+ex:s_prod_0 a ex:Production ;
+    rdfs:label "A B C" ;
+    ex:hasRHSNonTerminal ex:NT_A,
+        ex:NT_B,
+        ex:NT_C ;
+    ex:lhs ex:NT_s .
+
+ex:NT_s a ex:NonTerminal ;
+    rdfs:label "s" ;
+    ex:firstSet "1" ;
+    ex:followSet "$" .
+
+ex:T_1 a ex:Terminal ;
+    rdfs:label "1" .
+
+ex:NT_A a ex:NonTerminal ;
+    rdfs:label "A" ;
+    ex:firstSet "1" ;
+    ex:followSet "1" .
+
+ex:NT_B a ex:NonTerminal ;
+    rdfs:label "B" ;
+    ex:firstSet "1" ;
+    ex:followSet "3" .
+
+ex:NT_C a ex:NonTerminal ;
+    rdfs:label "C" ;
+    ex:firstSet "3" ;
+    ex:followSet "$" .
+
+ex:Terminal a owl:Class .
+
+ex:NonTerminal a owl:Class .
+
+ex:Production a owl:Class .
+

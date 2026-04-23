@@ -1,6 +1,7 @@
 import sys
-# Parser Gerado Automaticamente - Projeto GP 2026
-gramatica = {'terminais': ['[', ',', ']', '[0-9]+', '[^<>]+', 'ε'], 'nao_terminais': ['Cont', 'string', 'int', 'Elem', 'Resto', 'Lista', 'Elems'], 'producoes': {'Lista': [['[', 'Cont']], 'Cont': [[']'], ['Elems', ']']], 'Elems': [['Elem', 'Resto']], 'Resto': [['ε'], [',', 'Elem', 'Resto']], 'Elem': [['int'], ['string']], 'int': [['[0-9]+']], 'string': [['[^<>]+']]}, 'inicial': 'Lista', 'literais': {',', ']', '['}}
+import json
+# Parser Gerado - Projeto 2026
+gramatica = {'terminais': ['1', 'ε', '3'], 'nao_terminais': ['B', 's', 'C', 'A'], 'producoes': {'s': [['A', 'B', 'C']], 'A': [['1']], 'B': [['1']], 'C': [['3']]}, 'inicial': 's', 'literais': set()}
 prox_simb = None
 
 def parser_error(simb):
@@ -18,111 +19,49 @@ def rec_term(esperado):
         return None
 # --------------------------------------------------------
 
-def rec_Cont():
+def rec_B():
     global prox_simb
-    no_atual = {'name': 'Cont', 'children': []}
-    if prox_simb and prox_simb['type'] == ']':
-        filho_0 = rec_term(']')
+    no_atual = {'name': 'B', 'children': []}
+    if prox_simb and prox_simb['type'] == '1':
+        filho_0 = rec_term('1')
         if filho_0: no_atual['children'].append(filho_0)
         return no_atual
-    elif prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Elems()
+    else:
+        parser_error(prox_simb)
+        return None
+
+def rec_s():
+    global prox_simb
+    no_atual = {'name': 's', 'children': []}
+    if prox_simb and prox_simb['type'] == '1':
+        filho_0 = rec_A()
         if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_term(']')
+        filho_1 = rec_B()
         if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_Elems()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_term(']')
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_string():
-    global prox_simb
-    no_atual = {'name': 'string', 'children': []}
-    if prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_term('[^<>]+')
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_int():
-    global prox_simb
-    no_atual = {'name': 'int', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_term('[0-9]+')
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Elem():
-    global prox_simb
-    no_atual = {'name': 'Elem', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_int()
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_string()
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Resto():
-    global prox_simb
-    no_atual = {'name': 'Resto', 'children': []}
-    if prox_simb and prox_simb['type'] == ']':
-        no_atual['children'].append({'name': 'ε'})
-        return no_atual
-    elif prox_simb and prox_simb['type'] == ',':
-        filho_0 = rec_term(',')
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Elem()
-        if filho_1: no_atual['children'].append(filho_1)
-        filho_2 = rec_Resto()
+        filho_2 = rec_C()
         if filho_2: no_atual['children'].append(filho_2)
         return no_atual
     else:
         parser_error(prox_simb)
         return None
 
-def rec_Lista():
+def rec_C():
     global prox_simb
-    no_atual = {'name': 'Lista', 'children': []}
-    if prox_simb and prox_simb['type'] == '[':
-        filho_0 = rec_term('[')
+    no_atual = {'name': 'C', 'children': []}
+    if prox_simb and prox_simb['type'] == '3':
+        filho_0 = rec_term('3')
         if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Cont()
-        if filho_1: no_atual['children'].append(filho_1)
         return no_atual
     else:
         parser_error(prox_simb)
         return None
 
-def rec_Elems():
+def rec_A():
     global prox_simb
-    no_atual = {'name': 'Elems', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Elem()
+    no_atual = {'name': 'A', 'children': []}
+    if prox_simb and prox_simb['type'] == '1':
+        filho_0 = rec_term('1')
         if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Resto()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_Elem()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Resto()
-        if filho_1: no_atual['children'].append(filho_1)
         return no_atual
     else:
         parser_error(prox_simb)
@@ -171,7 +110,7 @@ def tokenizar_frase_com_eof_local(frase, gramatica):
                 pass
 
         if not candidatos:
-            return None, f"Token '{part}' não reconhecido: não é literal nem casa com padrões lexicais."
+            return None, f"Token '{part}' não reconhecido."
 
         candidatos_normalizados = [_clean(c) for c in candidatos]
         tokens.append({'type': candidatos_normalizados[0], 'value': part, 'candidates': candidatos_normalizados})
@@ -207,7 +146,7 @@ if __name__ == '__main__':
 
     lexer = _SimpleLexer(tokens)
     prox_simb = lexer.token()
-    start_fn = globals().get(f"rec_{gramatica.get('inicial')}")
+    start_fn = globals().get("rec_s")
     if not start_fn:
         print('Função inicial rec_' + str(gramatica.get('inicial')) + ' não encontrada.')
         sys.exit(1)
@@ -231,6 +170,18 @@ if __name__ == '__main__':
                 else:
                     print('  ' * (nivel+1) + str(c.get('name')))
         _pretty_print(raiz)
+        # Tentar invocar um Visitor externo (visitor_generated.py) se existir
+        try:
+            from visitor_generated import TreeVisitor
+            v = TreeVisitor()
+            resultado_visit = v.visit(raiz)
+            print('\nVisitor output:')
+            try:
+                print(json.dumps(resultado_visit, ensure_ascii=False, indent=2))
+            except Exception:
+                print(resultado_visit)
+        except Exception:
+            print('\nNota: para usar um Visitor automÃ¡tico, descarregue visitor_generated.py e coloque-o na mesma pasta que este ficheiro.')
     except Exception:
         import traceback
         traceback.print_exc()
