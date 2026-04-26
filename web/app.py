@@ -456,6 +456,7 @@ def index():
     gramatica_texto = ""
     frase_entrada = ""
     codigo_parser = ""
+    codigo_visitor = ""
     sugestao = None
     aviso_conflitos_persistentes = None
     
