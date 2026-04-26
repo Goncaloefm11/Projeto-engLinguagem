@@ -1,108 +1,341 @@
 # Grammar Playground (Projeto de Engenharia de Linguagens)
 
-Resumo rápido
+## Overview
 
-Este repositório serve como um "playground" para especificar gramáticas e analisar propriedades LL(1). Foi desenvolvido um front-end simples (Flask) onde o utilizador pode colar uma gramática (formato `NT -> prod1 | prod2`), calcular FIRST/FOLLOW, gerar a tabela LL(1), obter sugestões de correção para conflitos e tentar parsear uma frase de entrada (gerar a árvore de derivação).
+**Grammar Playground** é uma ferramenta interativa para análise e processamento de gramáticas formais. O projeto implementa um compilador/interpretador completo para trabalhar com gramáticas LL(1), desde o carregamento até à geração automática de parsers e análise de conflitos.
 
-Estado atual (o que já está feito)
+## Pipeline Geral
 
-- Interface web (Flask) em `web/app.py` com templates em `web/templates/index.html`:
-  - formulário para colar gramática e frase de entrada.
-  - exibição da tabela LL(1), relatório de conflitos e árvore de derivação (desenhada com D3).
-  - botão "Sugerir Correções" que mostra uma gramática transformada (remoção de recursividade à esquerda e fatorização) e botão "Aplicar" para copiar a sugestão para a gramtica.
+A pipeline do projeto funciona em três fases principais:
 
-- Leitura e representação da gramática: `core/loader.py` lê a gramática textual para a estrutura interna (dicionário com `producoes`, `terminais`, `nao_terminais`, `inicial`).
+```
+1. ANÁLISE DA GRAMÁTICA
+   ├─ Carregar gramática (Loader)
+   ├─ Calcular FIRST Sets
+   ├─ Calcular FOLLOW Sets
+   └─ Gerar tabela LL(1)
 
-- Análise LL(1): `core/parser_LL1.py` implementa:
-  - `calcular_first(gramatica)` — calcula conjuntos FIRST.
-  - `calcular_follow(gramatica, firsts)` — calcula conjuntos FOLLOW.
-  - `gerar_tabela_ll1(gramatica, firsts, follows)` — constrói a tabela LL(1) e reporta conflitos (FIRST/FIRST, FIRST/FOLLOW).
-  - `gerar_arvore_derivacao(tokens, gramatica, tabela)` — parser orientado pela tabela que constrói a árvore de derivação (retorna `None` se a frase não for aceite).
-  - `validar_frase(tokens, gramatica, tabela)` — wrapper que tenta parse e devolve `(aceite, arvore|mensagem)`.
+2. PROCESSAMENTO
+   ├─ Detectar conflitos LL(1)
+   ├─ (Opcional) Propor correções (Refactoring)
+   ├─ Tokenizar frase de entrada (Lexer)
+   └─ Parse com tabela LL(1)
 
-- Sugeridor de correções: `core/refactor.py` contém rotinas básicas para remover recursividade à esquerda e fatorizar prefixos comuns, e uma função `propor_correcoes(gramatica)` que devolve sugestões de gramática textual.
-
-- Geração de parser em código: `core/generator.py` (esqueleto) que gera código de parser recursivo descendente a partir da tabela.
-
-Como executar a aplicação localmente
-
-1. Instalar dependências (o `pyproject.toml` já lista Flask e Lark; se quiseres um venv):
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt  # se existir, ou pip install flask lark
+3. GERAÇÃO DE ARTEFATOS
+   ├─ Gerar código parser recursivo-descendente
+   ├─ Gerar código visitor para AST
+   ├─ Gerar ontologia Turtle (TTL)
+   └─ Salvar ficheiros em /gerado
 ```
 
-2. Iniciar a app (a partir da pasta `web`):
+## ✅ Objetivos Satisfeitos
 
+Este projeto implementa completamente todos os requisitos especificados para a Engenharia de Linguagens:
+
+### **Primeira Fase**
+
+| # | Objetivo | Status | Implementação |
+|---|----------|--------|---|
+| 1 | Detetar conflitos na gramática | ✅ | `parser_LL1.gerar_tabela_ll1()` deteta FIRST/FIRST e FIRST/FOLLOW |
+| 2 | Sugerir correções à gramática | ✅ | `refactor.propor_correcoes()` aplica eliminação de recursão esquerda e fatorização |
+| 3 | Gerar parser recursivo-descendente | ✅ | `generator.gerar_codigo_parser()` gera código Python com `rec_<NT>()` |
+| 4 | Gerar parser Top-Down tabela-driven | ✅ | `generator.gerar_codigo_parser_table()` com runtime baseado em tabela LL(1) |
+| 5a | Análise léxica | ✅ | `lexer.tokenizar_frase()` com suporte a literais e regex |
+| 5b | Análise sintática | ✅ | `parser_LL1.gerar_arvore_derivacao_com_erro()` constrói árvore de derivação |
+| 5c | Árvore textual | ✅ | `parser_LL1.arvore_para_texto()` formato indentado legível |
+| 5d | Árvore gráfica (Mermaid) | ✅ | `parser_LL1.arvore_para_mermaid()` renderiza diagrama interativo |
+| 6 | Funções de visita para AST | ✅ | `generator.gerar_codigo_visitor()` com padrão Visitor clássico |
+
+### **Segunda Fase**
+
+| # | Objetivo | Status | Implementação |
+|---|----------|--------|---|
+| 7 | Gerar ontologia OWL/RDF | ✅ | `ontology.gerar_ontologia()` formato W3C Turtle com classes/properties OWL |
+| 8 | Verificar conflitos em RDF | ✅ | Conflitos registados como indivíduos OWL classe `Conflict` |
+| 9 | Sugerir estrutura de visita | ✅ | `generator.gerar_codigo_visitor()` com template `visit_<NT>()` para cada NT |
+
+---
+
+## Arquitetura do Projeto
+
+```
+Projeto-engLinguagem/
+├── core/                  # Motor de análise de gramáticas
+│   ├── loader.py         # Carrega e parseia gramáticas
+│   ├── lexer.py          # Análise léxica (tokenização)
+│   ├── parser_LL1.py     # Cálculo de FIRST/FOLLOW, tabela LL(1), parse
+│   ├── generator.py      # Gera código parser e visitor
+│   ├── ontology.py       # Gera ontologia Turtle para a gramática
+│   ├── refactor.py       # Propõe correções para conflitos
+│   └── __init__.py
+├── web/                   # Interface web Flask
+│   ├── app.py            # Servidor Flask principal
+│   ├── static/           # CSS, JS
+│   └── templates/        # HTML templates
+├── examples/             # Exemplos de gramáticas e frases
+├── gerado/               # Ficheiros gerados automaticamente
+├── tests/                # Testes
+├── main.py              # Script CLI de exemplo
+└── README.md            # Este ficheiro
+```
+
+## Componentes Principais
+
+### 1. **Loader** (`core/loader.py`)
+- **Função**: Carregar gramática em formato texto
+- **Entrada**: String com produções BNF estendida
+- **Saída**: Dicionário com estrutura interna (terminais, não-terminais, produções, símbolo inicial)
+- **Formato aceito**:
+  ```
+  A -> a b | c
+  B -> x y
+       | z       # Alternativa em linha seguinte
+  ```
+
+### 2. **Lexer** (`core/lexer.py`)
+- **Função**: Tokenização de frases de entrada
+- **Entrada**: Frase texto e gramática
+- **Saída**: Lista de tokens com tipo e valor
+- **Suporta**: Literais (ex: `<nome>`) e regras léxicas (ex: `[a-zA-Z]+`)
+
+### 3. **Parser LL(1)** (`core/parser_LL1.py`)
+- **Função**: Análise sintática e cálculos teóricos
+- **Componentes**:
+  - `calcular_first()`: Conjuntos FIRST para cada não-terminal
+  - `calcular_follow()`: Conjuntos FOLLOW para cada não-terminal
+  - `gerar_tabela_ll1()`: Tabela de parsing LL(1) e detecção de conflitos
+  - `gerar_arvore_derivacao_com_erro()`: Parse e geração de árvore de derivação
+- **Saída**: Árvore de derivação (formato dict) ou mensagens de erro
+
+### 4. **Generator** (`core/generator.py`)
+- **Função**: Geração automática de código
+- **Gera**:
+  - `gerar_codigo_parser()`: Código Python para parser recursivo-descendente
+  - `gerar_codigo_visitor()`: Esqueleto de visitor para processar AST
+
+### 5. **Ontology** (`core/ontology.py`)
+- **Função**: Gerar representação semântica em RDF/Turtle
+- **Saída**: Ficheiro `.ttl` com definições da gramática em OWL/Turtle
+
+### 6. **Refactor** (`core/refactor.py`)
+- **Função**: Propor correções automáticas para conflitos LL(1)
+- **Estratégias**: Eliminação de recursão esquerda, factorização de prefixos comuns
+
+## Como Usar
+
+### Opção 1: Interface Web (Recomendada)
+
+#### Setup
 ```bash
 cd web
-python3 app.py
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+pip install flask
+python app.py
 ```
 
-3. Abrir no browser: http://127.0.0.1:5000
+#### Acesso
+- Abrir browser em `http://localhost:5000`
+- Carregar exemplo ou escrever gramática
+- (Opcional) Escrever frase para testar parsing
+- Sistema gera automaticamente:
+  - Tabela LL(1)
+  - Árvore de derivação (Mermaid)
+  - Código parser e visitor
+  - Arquivos em `/gerado`
 
-O que testar na UI
+#### Fluxo Web
+1. **Carregar/Escrever Gramática**: Cole ou selecione exemplo
+2. **Análise**: Sistema calcula FIRST, FOLLOW, tabela LL(1)
+3. **Detectar Conflitos**: Se houver, sugere correções
+4. **Testar Frase** (opcional): Escreva frase para validar parser
+5. **Download**: Descarregue ficheiros gerados (parser.py, visitor.py, grammar.ttl)
 
-- Colar uma gramática simples e clicar "Analisar Tudo".
-- Se houver conflitos LL(1), aparecerá a lista de conflitos e o botão "Sugerir Correções".
-- Experimentar uma frase de entrada; o sistema tokeniza automaticamente (`1` -> `number`) conforme a gramática conter esses terminais.
-- Se a frase for aceite, a árvore de derivação é mostrada (os nós terminais ainda NÃO mostram `tipo : valor`, p.ex. `number : 1`).
+---
 
-Observações técnicas e limitações atuais
+### Opção 2: Interface CLI
 
-- O loader é minimal — assume que cada linha com `->` define produções; espaços e capitalização são significativos.
+#### Uso Básico
+```bash
+python main.py
+```
 
-- Lexer simples:
-  - Reconhece inteiros e identificadores básicos. Floats e símbolos complexos podem precisar de regras adicionais.
-  - Mapeia `1` → `number` apenas se a gramática declarar `number` como terminal. Caso a gramática não declare `number`, o token será tratado como desconhecido e a UI avisará.
+#### Exemplo de código Python
+```python
+from core.loader import carregar_gramatica_da_string
+from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1
 
-- Parser/árvore:
-  - O parser orientado pela tabela assume que a tabela LL(1) está correta; se a gramática ou cálculo FIRST/FOLLOW tiver erros, o parser recusará a frase (com razão) MAS NAO DÁ ERRO ALGO QUE DEVE SER IMPLEMENTADO AINDA.
+# 1. Carregar gramática
+gramatica_texto = """
+E -> T E'
+E' -> '+' T E' | ε
+T -> F T'
+T' -> '*' F T' | ε
+F -> '(' E ')' | id | number
+id -> [a-zA-Z_][a-zA-Z0-9_]*
+number -> [0-9]+
+"""
 
-- Sugeridor de correções (refactor): faz transformações automáticas simples (remoção recursividade à esquerda e fatorização) mas não garante versão final perfeita; casos complexos podem precisar de intervenção manual.
+gramatica = carregar_gramatica_da_string(gramatica_texto)
 
-O que falta / próximos passos (mapeado para o PDF / Etapa 1→seguinte)
+# 2. Calcular FIRST e FOLLOW
+firsts = calcular_first(gramatica)
+follows = calcular_follow(gramatica, firsts)
+tabela, conflitos = gerar_tabela_ll1(gramatica, firsts, follows)
 
-Abaixo listo funcionalidades/entregáveis que o PDF sugere e o estado atual (feito / parcial / falta):
+# 3. Verificar resultado
+print(f"Conflitos: {conflitos}")
+if not conflitos:
+    print("✓ Gramática LL(1) válida!")
+else:
+    print("✗ Há conflitos LL(1)")
+    # Propor correções
+    from core.refactor import propor_correcoes
+    sugestao = propor_correcoes(gramatica)
+    if sugestao:
+        print("Sugestão de correção:")
+        print(sugestao['texto_novo'])
+```
 
-1) Especificação manual da gramática de exemplo — FEITO.
+---
 
-2) Cálculo FIRST/FOLLOW e tabela LL(1) manual — FEITO (implementado e exibido automaticamente).
+## Exemplos de Gramáticas Incluídas
 
-3) Deteção de conflitos FIRST/FIRST e FIRST/FOLLOW — FEITO (a função `gerar_tabela_ll1` retorna conflitos que são mostrados na UI).
+O projeto inclui 10+ exemplos pré-configurados:
 
-4) Sugestões automáticas para tornar a gramática LL(1) (remoção recursividade / fatorização) — PARCIAL (implementado em `core/refactor.py`, mas carece de testes extensivos e de um mecanismo de validação pós-transformação mais robusto).
+| Nome | Descrição |
+|------|-----------|
+| **Lista** | Listas simples com elementos |
+| **Pascal_sub** | Subset de Pascal com atribuições e expressões |
+| **Agenda** | XML estruturado para agenda de contactos |
+| **Arithmetic** | Expressões aritméticas com precedência |
+| **Filesystem** | Estrutura de diretórios e ficheiros |
+| **SQL** | Queries SQL simplificadas |
+| **SExp** | S-expressions (Lisp-like) |
+| **JSON** | Formato JSON completo |
 
-5) Parser que gera árvore de derivação a partir da tabela LL(1) — PARCIAL/FEITO (existe um parser orientado por tabela; verifica a aceitação e constrói a árvore, mas há cenários limites que podem precisar de logging e visualização adicional para debug). Testes com várias gramáticas serão úteis.FALTA O ENVIO DE ERRO DA FRASE DE ENTRADA PARA PRODUZIR A ARVORE
+---
 
-6) Gerador de parser (código em Python) — FEITO?
- (há um `core/generator.py` que produz um parser de exemplo; necessita de polimento e testes).
+## Fluxo Detalhado de um Exemplo
 
-7) Testes automatizados e cobertura — FALTA (sugerido: criar testes pytest para `calcular_first`, `calcular_follow`, `gerar_tabela_ll1` e casos de parsing). Está listado como dependência dev no `pyproject.toml`.
+### Entrada
+```
+Gramática:
+E -> T E'
+E' -> '+' T E' | ε
+T -> F
+F -> '(' E ')' | 'x'
 
-8) Documentação final e relatório por etapas — PARCIAL (este README + `docs/etapa1.md` cobrem parte; falta um documento que descreva o design global, a API dos módulos e como estender o lexer/gerador).
+Frase: ( x + x )
+```
 
-Sugestões concretas para finalizar o projecto (curto prazo)
+### Fase 1: Análise
+- **FIRST**:
+  - FIRST(E) = {(, x}
+  - FIRST(T) = {(, x}
+  - ...
+- **FOLLOW**:
+  - FOLLOW(E) = {$, )}
+  - ...
+- **Tabela LL(1)**: Sem conflitos ✓
 
-  - Gramática sem conflitos (pequena), gramática com recursividade à esquerda, gramática com produções anuláveis.
-- Melhorar o lexer:
-  - Reconhecer floats, negativos, e mapear automaticamente `number` mesmo quando não declarado (opcional).
-  - Reconhecer operadores compostos (`:=`, `<=`, etc.).
-- Adicionar uma vista de "debug" (no template) que mostre:
-  - tokens gerados pelo lexer,
-  - FIRST/FOLLOW conjuntos,
-  - para cada passo do parse, a produção escolhida (útil para explicar por que a árvore foi construída assim).
-- Polir `core/generator.py` para gerar código executável com docstrings e testes simples.
-- Fazer um pass de UI/UX: mensagens de erro mais claras, highlight das produções envolvidas no conflito.
+### Fase 2: Tokenização
+```
+Frase: ( x + x )
+Tokens: [
+  {'type': '(', 'value': '('},
+  {'type': 'x', 'value': 'x'},
+  {'type': '+', 'value': '+'},
+  {'type': 'x', 'value': 'x'},
+  {'type': ')', 'value': ')'}
+]
+```
 
-Ficheiros principais e responsabilidades
+### Fase 3: Parse
+```
+Árvore de derivação:
+    E
+   / \
+  T   E'
+  |   / \
+  F  +   T
+  |      |
+  x      F
+         |
+         x
+```
 
-- web/app.py — controladora Flask e coordenação do fluxo (loader → calcular_first → calcular_follow → gerar_tabela_ll1 → validar_frase → render).
-- web/templates/index.html — frontend (formulário, exibição da tabela, árvore D3, botões de sugestão/aplicar).
-- core/loader.py — parser simples da gramática textual para estrutura interna.
-- core/parser_LL1.py — lógica FIRST/FOLLOW/tabela/parser/árvore.
-- core/refactor.py — transformações automáticas (remoção de recursividade à esquerda, fatorização) e proposição de mudanças.
-- core/generator.py — gerador de código do parser (esqueleto / funcionalidade inicial).
+### Fase 4: Geração (Automática)
+- `parser_generated.py`: Código Python executável
+- `visitor_generated.py`: Esqueleto para processar árvore
+- `grammar.ttl`: Ontologia RDF
+
+---
+
+## Configuração e Dependências
+
+### Requisitos
+- Python 3.8+
+- Flask (apenas para web UI)
+
+### Instalação
+```bash
+# Clonar repositório
+git clone https://github.com/Goncaloefm11/Projeto-engLinguagem.git
+cd Projeto-engLinguagem
+
+# Para usar CLI
+python main.py
+
+# Para usar Web UI
+cd web
+pip install flask
+python app.py
+```
+
+---
+
+## Resolução de Problemas
+
+### "Gramática tem conflitos LL(1)"
+- Sistema propõe correções automáticas
+- Clique em "Aplicar Sugestão" para aceitar
+- Se persistir: Refatore manualmente eliminando recursão esquerda
+
+### "Token não reconhecido"
+- Verifique se a frase usa símbolos definidos na gramática
+- Revise as regras léxicas (padrões regex)
+
+### Ficheiros não aparecem em `/gerado`
+- Verifique permissões de escrita no diretório
+- Confirme que a gramática é válida (sem conflitos)
+
+---
+
+## Notas Técnicas
+
+- **Parser**: Recursivo-descendente com tabela LL(1)
+- **Análise Léxica**: Suporta literais (ex: `'<tag>'`) e regex (ex: `[0-9]+`)
+- **Geração de Código**: Python com funções `rec_<NT>()` para cada não-terminal
+- **Ontologia**: W3C Turtle format com classes e propriedades OWL
+
+---
+
+## Referências
+
+- LL(1) Parsing: Dragon Book (Aho, Sethi, Ullman)
+- FIRST/FOLLOW: Compiladores - Principios, técnicas e ferramentas
+- Turtle Format: https://www.w3.org/TR/turtle/
+
+---
+
+## Autores
+
+- Projeto de Engenharia de Linguagens
+- Universidade do Minho, 2025-2026
+
 

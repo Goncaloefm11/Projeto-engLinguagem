@@ -9,7 +9,34 @@
         .header { background-color: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .header p { margin: 0; font-size: 14px; opacity: 0.8; }
-        .container { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        /* Main Layout - Two Panels */
+        .container { display: flex; gap: 30px; margin: 30px auto; padding: 0; max-width: 100%; height: calc(100vh - 100px); overflow: hidden; padding: 0 30px; }
+        
+        /* Left Panel - Fixed */
+        .panel-left { 
+            flex: 0 0 350px; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            overflow-y: auto; 
+            position: sticky; 
+            top: 20px; 
+            height: fit-content;
+            max-height: calc(100vh - 120px);
+        }
+        
+        /* Right Panel - Scrollable */
+        .panel-right { 
+            flex: 1; 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); 
+            overflow-y: auto;
+            max-height: calc(100vh - 100px);
+        }
         
         /* Layout de Formulário */
         .flex-row { display: flex; gap: 20px; align-items: flex-end; margin-bottom: 10px; }
@@ -57,6 +84,13 @@
     .panel-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
     .small-btn { background:#34495e; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:600; }
     .small-btn.ghost { background:transparent; color:#34495e; border:1px solid #e1e8ee; }
+    
+    /* Toast Notifications */
+    .toast { background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 14px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; font-weight: 500; }
+    .toast::before { content: '✓'; font-size: 20px; font-weight: bold; }
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+    .toast.removing { animation: slideOut 0.3s ease-in; }
     </style>
 </head>
 <body>
@@ -66,49 +100,58 @@
         <p>Projeto de Engenharia de Linguagens · 2º Semestre 2026</p>
     </div>
 
+    <!-- Toast Container -->
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; font-family: 'Segoe UI', sans-serif;"></div>
+
     <div class="container">
-        <form method="POST" id="mainForm">
-            <input type="hidden" name="acao" id="acaoInput" value="analisar">
-            <div class="flex-row">
-                <div class="flex-grow">
-                    <label><strong>Gramática:</strong></label>
-                </div>
-                <div>
-                    <label>Exemplos:</label>
-                    <select id="exemploSelect" onchange="carregarExemplo()" style="padding: 5px; border-radius: 4px;">
-                        <option value="">-- Selecionar --</option>
-                        {% for nome in exemplos %}
-                            <option value="{{ nome }}">{{ nome }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-            
-            <textarea name="gramatica" id="gramaticaTexto" placeholder="Ex: S -> A B...">{{ gramatica_texto }}</textarea>
-            
-            <div style="margin-top: 20px;">
+        <!-- Left Panel - Form -->
+        <div class="panel-left">
+            <form method="POST" id="mainForm">
+                <input type="hidden" name="acao" id="acaoInput" value="analisar">
                 <div class="flex-row">
                     <div class="flex-grow">
-                        <label><strong>Frase de Entrada (para a Árvore):</strong></label>
+                        <label><strong>Gramática:</strong></label>
                     </div>
-                    {% if frases_exemplo %}
                     <div>
-                        <label>Exemplos de Frases:</label>
-                        <select id="fraseExemploSelect" onchange="carregarFraseExemplo()" style="padding: 5px; border-radius: 4px;">
+                        <label>Exemplos:</label>
+                        <select id="exemploSelect" onchange="carregarExemplo()" style="padding: 5px; border-radius: 4px;">
                             <option value="">-- Selecionar --</option>
-                            {% for nome in frases_exemplo %}
+                            {% for nome in exemplos %}
                                 <option value="{{ nome }}">{{ nome }}</option>
                             {% endfor %}
                         </select>
                     </div>
-                    {% endif %}
                 </div>
-                <input type="text" name="frase" id="fraseInput" value="{{ frase_entrada }}" placeholder="Ex: id : number">
-                <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
-            </div>
+                
+                <textarea name="gramatica" id="gramaticaTexto" placeholder="Ex: S -> A B...">{{ gramatica_texto }}</textarea>
+                
+                <div style="margin-top: 20px;">
+                    <div class="flex-row">
+                        <div class="flex-grow">
+                            <label><strong>Frase de Entrada (para a Árvore):</strong></label>
+                        </div>
+                        {% if frases_exemplo %}
+                        <div>
+                            <label>Exemplos de Frases:</label>
+                            <select id="fraseExemploSelect" onchange="carregarFraseExemplo()" style="padding: 5px; border-radius: 4px;">
+                                <option value="">-- Selecionar --</option>
+                                {% for nome in frases_exemplo %}
+                                    <option value="{{ nome }}">{{ nome }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <input type="text" name="frase" id="fraseInput" value="{{ frase_entrada }}" placeholder="Ex: id : number">
+                    <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
+                </div>
 
-            <button type="submit">Analisar</button>
-        </form>
+                <button type="submit" style="width: 100%;">Analisar</button>
+            </form>
+        </div>
+
+        <!-- Right Panel - Results -->
+        <div class="panel-right">
 
         {% if resultado %}
             {% if resultado.erro_frase %}
@@ -318,7 +361,7 @@
                                     <button class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
                                     <button class="small-btn ghost" id="btnCopyParser">Copiar</button>
                                         {% if resultado and resultado.ontology_filename %}
-                                            <a class="small-btn ghost" href="/download_generated/{{ resultado.ontology_filename }}">Ontologia (.ttl)</a>
+                                            <a class="small-btn ghost" id="btnDownloadOntology" href="/download_generated/{{ resultado.ontology_filename }}">Ontologia (.ttl)</a>
                                         {% endif %}
                                 </div>
                             </div>
@@ -344,7 +387,11 @@
                 {% endif %}
             {% endif %}
         {% endif %}
+        </div>
+        <!-- End Right Panel -->
     </div>
+    <!-- End Container -->
+    
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         // Não inicializar automaticamente; iremos renderizar sob pedido (lazy)
@@ -408,6 +455,22 @@
 
         // Handlers para mostrar / descarregar os painéis (texto e mermaid)
         document.addEventListener('DOMContentLoaded', function(){
+            // Função para mostrar toast de notificação
+            function showToast(message, duration = 3000) {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.textContent = message;
+                container.appendChild(toast);
+                
+                setTimeout(function() {
+                    toast.classList.add('removing');
+                    setTimeout(function() {
+                        toast.remove();
+                    }, 300);
+                }, duration);
+            }
+
             const btnTxt = document.getElementById('btnToggleTexto');
             const panelTxt = document.getElementById('panel-texto');
             const preTxt = document.getElementById('arvore-texto-pre');
@@ -427,6 +490,7 @@
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url; a.download = 'arvore_textual.txt'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    showToast('Árvore textual descarregada com sucesso!');
                 });
             }
 
@@ -471,6 +535,7 @@
                     const blob = new Blob([merText], {type: 'text/plain;charset=utf-8'});
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); a.href = url; a.download = 'arvore.mmd'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    showToast('Diagrama Mermaid descarregado com sucesso!');
                 });
             }
 
@@ -487,6 +552,7 @@
                     const blob = new Blob([code], {type: 'text/x-python;charset=utf-8'});
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); a.href = url; a.download = 'parser_generated.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    showToast('Parser (parser_generated.py) descarregado com sucesso!');
                 });
             }
 
@@ -499,6 +565,7 @@
                         // fallback
                         const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
                     }
+                    showToast('Código do parser copiado para clipboard!');
                 });
             }
 
@@ -515,6 +582,7 @@
                     const blob = new Blob([code], {type: 'text/x-python;charset=utf-8'});
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a'); a.href = url; a.download = 'visitor_generated.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    showToast('Visitor (visitor_generated.py) descarregado com sucesso!');
                 });
             }
 
@@ -526,6 +594,15 @@
                     } else {
                         const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
                     }
+                    showToast('Código do visitor copiado para clipboard!');
+                });
+            }
+
+            // Ontology download button
+            const btnDownloadOntology = document.getElementById('btnDownloadOntology');
+            if (btnDownloadOntology) {
+                btnDownloadOntology.addEventListener('click', function(){
+                    showToast('Ontologia (grammar.ttl) descarregada com sucesso!');
                 });
             }
         });
