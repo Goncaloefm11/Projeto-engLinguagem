@@ -154,18 +154,27 @@
         <div class="panel-right">
 
         {% if resultado %}
+
             {% if resultado.erro_frase %}
-            <div style="margin-top: 20px;">
-                <div class="error-box">
-                    <strong>Erro no parsing da frase:</strong> {{ resultado.erro_frase }}
+                <div class="alert alert-danger mt-3">
+                    <strong>Erro de Parsing:</strong> {{ resultado.erro_frase }}
                 </div>
-                {% if resultado.frase_sugestao %}
-                <button id="btnFraseExemplo" type="button" style="background-color:#e67e22; margin-top: 10px;">Usar Frase Simples de Exemplo</button>
-                <p style="font-size: 12px; color: #666; margin-top: 8px;">
-                    Exemplo sugerido: <strong>{{ resultado.frase_sugestao }}</strong>
-                </p>
-                {% endif %}
-            </div>
+
+                {% if resultado.is_correcao %}
+                <div class="mt-2">
+                    <p class="mb-1 text-success"><strong>Preview da Frase Corrigida:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-warning" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Corrigir Frase
+                    </button>
+                </div>
+            {% else %}
+                <div class="mt-2">
+                    <p class="mb-1"><strong>Exemplo Simples:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Usar Frase Simples
+                    </button>
+                </div>
+            {% endif %}
             {% endif %}
 
             {% if resultado.erro %}

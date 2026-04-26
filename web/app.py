@@ -1,5 +1,5 @@
 #app.py
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session, redirect, url_for
 import re
 import sys
 import os
@@ -8,18 +8,48 @@ import contextlib
 import tempfile
 import types
 import traceback
+import json
 
 # Adiciona a pasta raiz ao path para conseguirmos importar o 'core'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.loader import carregar_gramatica_da_string
 from core.parser_LL1 import calcular_first, calcular_follow, gerar_tabela_ll1, gerar_arvore_derivacao_com_erro, arvore_para_texto, arvore_para_mermaid, arvore_para_producoes_preordem
-from core.lexer import Lexer
+from core.lexer import tokenizar_frase, tokenizar_frase_com_eof
 from core.ontology import gerar_ontologia
 from flask import send_from_directory
+from core.error_recovery import analyze_error_context, sugerir_recuperacao, format_error_message
+import uuid
+import time
 
 
 app = Flask(__name__)
+app.secret_key = 'grammar_playground_secret_key_2026'
+
+# Server-side session storage em memória (evita cookies muito grandes)
+analysis_cache = {}  # { analysis_id: { 'data': {...}, 'timestamp': time.time() } }
+CACHE_EXPIRY = 3600  # 1 hora
+
+def cleanup_cache():
+    """Remove análises expiradas do cache"""
+    now = time.time()
+    expired_ids = [aid for aid, info in analysis_cache.items() if now - info['timestamp'] > CACHE_EXPIRY]
+    for aid in expired_ids:
+        del analysis_cache[aid]
+
+def make_json_serializable(obj):
+    """Converte objetos não-serializáveis (como sets) para tipos JSON-compatíveis"""
+    if isinstance(obj, set):
+        return sorted(list(obj))
+    elif isinstance(obj, dict):
+        return {k: make_json_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [make_json_serializable(item) for item in obj]
+    elif hasattr(obj, '__dict__'):
+        # Objetos customizados - tenta converter para string
+        return str(obj)
+    else:
+        return obj
 
 # No topo do web/app.py, define os exemplos
 EXEMPLOS = {
@@ -270,7 +300,75 @@ frases_exemplo = {
 }
 
 
-def tokenizar_frase(frase, gramatica):
+def diagnose_parse_error(tokens_lista, gramatica, tabela, erro_msg):
+    info_erro = {
+        'stack_esperado': [],
+        'token_recebido': None,
+        'posicao': 0
+    }
+    
+    import re
+    # Extrair qual foi o token que falhou da mensagem
+    m1 = re.search(r"lookahead\s*'([^']+)'", erro_msg)
+    m2 = re.search(r"inesperado\s*'([^']+)'", erro_msg)
+    m3 = re.search(r"extra após parsing:\s*'([^']+)'", erro_msg)
+    
+    if m1: info_erro['token_recebido'] = m1.group(1)
+    elif m2: info_erro['token_recebido'] = m2.group(1)
+    elif m3: info_erro['token_recebido'] = m3.group(1)
+    
+    # Extrair o que era esperado
+    m_esp = re.search(r"Esperado um de:\s*(.+)", erro_msg)
+    if m_esp:
+        info_erro['stack_esperado'] = [e.strip() for e in m_esp.group(1).split(', ') if e.strip()]
+    else:
+        m_esp2 = re.search(r"esperado\s*'([^']+)'", erro_msg)
+        if m_esp2:
+            info_erro['stack_esperado'] = [m_esp2.group(1)]
+            
+    diagnostico = analyze_error_context(
+        info_erro['stack_esperado'],
+        info_erro['token_recebido'] or '?',
+        [],
+        gramatica
+    )
+    
+    recuperacao = sugerir_recuperacao(
+        info_erro['stack_esperado'],
+        info_erro['token_recebido'] or '?',
+        gramatica,
+        tabela
+    )
+    
+    return {
+        'erro': erro_msg,
+        'diagnostico': diagnostico,
+        'recuperacao': recuperacao,
+        'mensagem_formatada': format_error_message(diagnostico, recuperacao)
+    }
+@app.route('/api/error-recovery', methods=['POST'])
+def api_error_recovery():
+    """
+    Endpoint para obter diagnóstico de erro detalhado.
+    POST data: {gramatica, tokens_lista, erro_msg}
+    """
+    try:
+        data = request.get_json()
+        gramatica_texto = data.get('gramatica', '')
+        erro_msg = data.get('erro_msg', '')
+        
+        gramatica = carregar_gramatica_da_string(gramatica_texto)
+        
+        diagnostico_completo = diagnose_parse_error(
+            [],  # tokens_lista vazio para agora
+            gramatica,
+            {},  # tabela vazia
+            erro_msg
+        )
+        
+        return diagnostico_completo
+    except Exception as e:
+        return {'erro': str(e)}, 400
     tokens_lista = []
     terminais = gramatica['terminais']
     producoes = gramatica['producoes']
@@ -460,6 +558,21 @@ def index():
     sugestao = None
     aviso_conflitos_persistentes = None
     
+    # Post-Redirect-Get pattern: recuperar dados do cache se disponível
+    cleanup_cache()
+    if 'analysis_id' in session:
+        analysis_id = session.pop('analysis_id')
+        if analysis_id in analysis_cache:
+            cached = analysis_cache.pop(analysis_id)
+            result_data = cached['data']
+            resultado = result_data.get('resultado')
+            gramatica_texto = result_data.get('gramatica_texto', '')
+            frase_entrada = result_data.get('frase_entrada', '')
+            codigo_parser = result_data.get('codigo_parser', '')
+            codigo_visitor = result_data.get('codigo_visitor', '')
+            sugestao = result_data.get('sugestao')
+            aviso_conflitos_persistentes = result_data.get('aviso_conflitos_persistentes')
+    
     if request.method == 'POST':
         acao = request.form.get('acao', 'analisar')
         gramatica_texto = request.form.get('gramatica', "")
@@ -574,11 +687,25 @@ def index():
                 
                 if erro_tokenizacao:
                     resultado['erro_frase'] = erro_tokenizacao
+                    resultado['erro_tipo'] = 'TOKENIZACAO'
                 else:
                     arvore_dict, erro_parse = gerar_arvore_derivacao_com_erro(tokens_lista, g, tab)
 
                     if erro_parse:
-                        resultado['erro_frase'] = erro_parse
+                        # Enriquecer com diagnóstico de error recovery
+                        diagnostico_err = diagnose_parse_error(tokens_lista, g, tab, erro_parse)
+                        resultado['erro_frase'] = diagnostico_err['mensagem_formatada']
+                        resultado['erro_tipo'] = 'PARSING'
+                        resultado['erro_diagnostico'] = diagnostico_err['diagnostico']
+                        resultado['erro_recuperacao'] = diagnostico_err['recuperacao']
+                        resultado['erro_detalhes'] = diagnostico_err
+                        frase_corrigida = corrigir_frase_com_diagnostico(tokens_lista, erro_parse, g, tab)
+                        if frase_corrigida:
+                            resultado['frase_sugestao'] = frase_corrigida
+                            resultado['is_correcao'] = True # Avisa o frontend para mudar o botão
+                        else:
+                            resultado['frase_sugestao'] = gerar_frase_exemplo_simples(g)
+                            resultado['is_correcao'] = False
                     else:
                         resultado['arvore'] = arvore_dict
                         resultado['arvore_texto'] = arvore_para_texto(arvore_dict)
@@ -586,6 +713,23 @@ def index():
 
         except Exception as e:
             resultado = {'erro': str(e)}
+        
+        # Post-Redirect-Get: guardar no cache server-side e só ID na sessão
+        analysis_id = str(uuid.uuid4())
+        analysis_cache[analysis_id] = {
+            'data': {
+                'resultado': make_json_serializable(resultado) if resultado else None,
+                'gramatica_texto': gramatica_texto,
+                'frase_entrada': frase_entrada,
+                'codigo_parser': codigo_parser,
+                'codigo_visitor': codigo_visitor,
+                'sugestao': make_json_serializable(sugestao) if sugestao else None,
+                'aviso_conflitos_persistentes': aviso_conflitos_persistentes
+            },
+            'timestamp': time.time()
+        }
+        session['analysis_id'] = analysis_id
+        return redirect(url_for('index'))
 
     return render_template('index.html', 
                            resultado=resultado, 
@@ -605,6 +749,114 @@ def download_generated(filename):
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     gerado_dir = os.path.join(project_root, 'gerado')
     return send_from_directory(gerado_dir, filename, as_attachment=True)
+
+def corrigir_frase_com_diagnostico(tokens_lista, erro_parse, gramatica, tabela):
+    import re
+    if not tokens_lista:
+        return ""
+    
+    # Ignora o EOF interno ($)
+    t_values = [t['value'] for t in tokens_lista if t.get('type') != '$']
+    frase_atual = " ".join(t_values)
+    
+    def concretizar(t):
+        """Transforma regras em exemplos reais."""
+        if not t or t in ('ε', '$', "''", '""'): return ''
+        s = t.strip()
+        if len(s) >= 2 and s[0] == "'" and s[-1] == "'": return s[1:-1]
+        
+        s_lower = s.lower()
+        if s_lower in ('id', 'identificador'): return 'x'
+        if s_lower in ('number', 'int', 'numero'): return '1'
+        if s_lower in ('string', 'texto') or '[^' in s: return '"texto"'
+        if s_lower in ('boolean', 'bool'): return 'true'
+        
+        if s.startswith('[a-z'): return 'var'
+        if s.startswith('[0-9') or s.startswith(r'\-?[0-9]'): return '1'
+        return s
+
+    def rank_token(t):
+        """Sistema de prioridades para evitar loops infinitos."""
+        s = concretizar(t)
+        # 1. Prioridade Máxima: Fechar blocos ou terminar a frase
+        if s in (']', ')', '}', '.', ';', '?>') or s.startswith('</'): return 1
+        # 2. Prioridade Alta: Literais (fecham o ramo sem abrir novos)
+        if s in ('x', '1', '"texto"', 'true', 'var', '0') or s.isalnum(): return 2
+        # 4. Prioridade Mínima (PERIGO): Abrir blocos
+        if s in ('[', '(', '{', '<', '<?xml') or (s.startswith('<') and not s.startswith('</')): return 4
+        return 3
+
+    # Resolve a frase iterativamente (limite seguro de 30 ciclos)
+    for iteracao in range(30):
+        tokens_atuais, err_tok = tokenizar_frase(frase_atual, gramatica)
+        if err_tok: break
+        
+        arvore, erro_p = gerar_arvore_derivacao_com_erro(tokens_atuais, gramatica, tabela)
+        
+        # A árvore foi gerada com sucesso, a frase está perfeita!
+        if not erro_p:
+            return frase_atual
+
+        # Interpretação cirúrgica da string de erro LL(1)
+        esperados = []
+        m_esp = re.search(r"Esperado um de:\s*(.+)", erro_p)
+        if m_esp:
+            bruto = m_esp.group(1)
+            # Proteção especial se a vírgula for o token esperado (ex: ,, ])
+            if bruto.startswith(',,'):
+                esperados = [','] + [e.strip() for e in bruto[2:].split(',')]
+            else:
+                esperados = [e.strip() for e in bruto.split(',')]
+        else:
+            m_esp2 = re.search(r"esperado\s*'([^']+)'", erro_p)
+            if m_esp2: esperados = [m_esp2.group(1)]
+            
+        token_falha = ''
+        m_falha = re.search(r"lookahead\s*'([^']+)'", erro_p) or \
+                  re.search(r"inesperado\s*'([^']+)'", erro_p) or \
+                  re.search(r"extra após parsing:\s*'([^']+)'", erro_p)
+        if m_falha: token_falha = m_falha.group(1)
+
+        uteis = [e for e in esperados if e and e.strip() not in ('ε', '$')]
+        t_atuais_val = [t['value'] for t in tokens_atuais if t.get('type') != '$']
+        nova_frase = frase_atual
+
+        if "extra após parsing" in erro_p:
+            # Remove o token a mais (do fim para o início)
+            if token_falha in t_atuais_val:
+                for i in reversed(range(len(t_atuais_val))):
+                    if t_atuais_val[i] == token_falha:
+                        t_atuais_val.pop(i)
+                        break
+                nova_frase = " ".join(t_atuais_val)
+                
+        elif uteis:
+            # Ordena pela nossa tabela de prioridades e insere
+            uteis.sort(key=rank_token)
+            token_escolhido = concretizar(uteis[0])
+            
+            if token_escolhido:
+                if token_falha == '$' or token_falha == '':
+                    t_atuais_val.append(token_escolhido)
+                else:
+                    inserido = False
+                    for i in range(len(t_atuais_val)):
+                        if t_atuais_val[i] == token_falha:
+                            t_atuais_val.insert(i, token_escolhido)
+                            inserido = True
+                            break
+                    if not inserido:
+                        t_atuais_val.append(token_escolhido)
+                        
+                nova_frase = " ".join(t_atuais_val)
+
+        # Tranca de segurança: quebra o loop se o código não alterou a frase
+        if nova_frase == frase_atual:
+            break
+            
+        frase_atual = nova_frase
+
+    return frase_atual
 
 if __name__ == '__main__':
     app.run(debug=True)
