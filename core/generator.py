@@ -219,10 +219,9 @@ def gerar_codigo_visitor(gramatica):
     folhas tenta converter para int/float, remove aspas de strings e devolve a string.
     """
     codigo = [
-        "# visitor_generated.py",
-        "# Visitor gerado - Projeto 2026",
         "import json",
         "import re",
+        "# Visitor gerado - Projeto 2026",
         "",
         "class TreeVisitor:",
         "    \"\"\"Visitor genérico para a árvore de derivação do parser.\"\"\"",
