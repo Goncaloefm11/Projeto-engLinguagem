@@ -361,55 +361,65 @@
 
                 {% if codigo_parser %}
                 <div class="section">
-                    <h3>Parser e Visitor</h3>
-                    <div class="panels">
-                        <div class="panel">
-                            <div class="panel-header">
-                                <strong>Parser Gerado</strong>
-                                <div>
-                                    <button type="button" class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
-                                    <button type="button" class="small-btn ghost" id="btnCopyParser">Copiar</button>
-                                </div>
-                            </div>
+                    <h3>Parser Recursivo Descendente</h3>
+                    <div class="panel">
+                        <div class="panel-header">
+                            <strong>Código do Parser</strong>
                             <div>
-                                <pre class="code-block"><code id="parser-code-block" class="language-python">{{ codigo_parser }}</code></pre>
+                                <button type="button" class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
+                                <button type="button" class="small-btn ghost" id="btnCopyParser">Copiar</button>
                             </div>
                         </div>
+                        <div>
+                            <pre class="code-block"><code id="parser-code-block" class="language-python">{{ codigo_parser }}</code></pre>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
 
-                        <div class="panel">
-                            <div class="panel-header">
-                                <strong>Visitor Editável</strong>
-                                <div>
-                                    <button type="button" class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
-                                    <button type="button" class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
-                                </div>
-                            </div>
-                            <div style="margin-bottom: 10px;">
-                                <label for="visitor-select" style="display: block; margin-bottom: 5px;"><strong>Escolher Visitor:</strong></label>
-                                <select id="visitor-select" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
-                                    <option value="">-- A carregar visitors --</option>
-                                </select>
-                            </div>
-                            <div>
-                                <textarea id="visitor-code-textarea" class="code-block" style="height: 300px; width: 100%; box-sizing: border-box;">{{ codigo_visitor }}</textarea>
-                            </div>
-                            <div style="margin-top: 8px; display: flex; gap: 8px;">
-                                <button type="button" id="btnSaveVisitor" class="btn btn-success" style="background-color: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; flex: 1;">Guardar Visitor</button>
-                                <button type="button" id="btnReloadVisitor" class="btn btn-secondary" style="background-color: #95a5a6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Recarregar</button>
-                            </div>
-                            <div id="visitor-interaction" style="margin-top: 15px;">
-                                <h5>Testar Visitor</h5>
-                                <div class="form-group">
-                                    <label for="visitor-input">Frase para input:</label>
-                                    <input type="text" id="visitor-input" class="form-control" placeholder="Forneça a frase para gerar a árvore...">
-                                </div>
-                                <button type="button" id="run-visitor-btn" class="btn btn-primary mt-2" style="background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Executar Visitor</button>
-                                <div style="margin-top: 10px;">
-                                    <strong>Resultado (Árvore Gerada):</strong>
-                                    <pre id="visitor-output" style="background: #f4f4f4; padding: 10px; border-radius: 4px; min-height: 50px; max-height: 200px; overflow: auto;"></pre>
-                                </div>
-                            </div>
+                {% if codigo_parser %}
+                <div class="section">
+                    <h3>Visitor</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label for="visitor-select" style="display: block; margin-bottom: 8px;"><strong>Escolher Visitor:</strong></label>
+                        <select id="visitor-select" style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ddd; font-size: 14px;">
+                            <option value="">-- A carregar visitors --</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 8px;"><strong>Visitor Editável:</strong></label>
+                        <textarea id="visitor-code-textarea" class="code-block" style="height: 350px; width: 100%; box-sizing: border-box;">{{ codigo_visitor }}</textarea>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button type="button" id="btnSaveVisitor" class="btn btn-success" style="background-color: #27ae60; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Guardar Visitor</button>
+                        <button type="button" id="btnReloadVisitor" class="btn btn-secondary" style="background-color: #95a5a6; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Recarregar</button>
+                        <button type="button" class="small-btn ghost" id="btnDownloadVisitor" style="padding: 10px 16px;">Descarregar</button>
+                        <button type="button" class="small-btn ghost" id="btnCopyVisitor" style="padding: 10px 16px;">Copiar</button>
+                    </div>
+
+                    <div style="background-color: #f0f8ff; border-left: 4px solid #3498db; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
+                        <h5 style="margin-top: 0; margin-bottom: 10px;">Testar Visitor</h5>
+                        <div style="margin-bottom: 10px;">
+                            <label for="visitor-input" style="display: block; margin-bottom: 5px;"><strong>Frase para Input:</strong></label>
+                            <input type="text" id="visitor-input" class="form-control" placeholder="Forneça a frase para gerar a árvore e processar..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; font-family: monospace;">
                         </div>
+                        <button type="button" id="run-visitor-btn" style="background-color: #3498db; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">Executar Visitor</button>
+                    </div>
+
+                    <div>
+                        <label style="display: block; margin-bottom: 10px;"><strong>Resultado (JSON):</strong></label>
+                        <pre id="visitor-output" style="background: #f4f4f4; padding: 15px; border-radius: 4px; min-height: 150px; max-height: 350px; overflow: auto; font-size: 12px; border: 1px solid #ddd;"></pre>
+                    </div>
+
+                    <div id="visitor-script-section" style="margin-top: 15px; display: none;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Script Gerado:</strong></label>
+                        <div style="background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 4px; min-height: 150px; max-height: 350px; overflow: auto; font-size: 12px; font-family: monospace; border: 1px solid #333; margin-bottom: 10px;">
+                            <pre id="visitor-script" style="margin: 0; white-space: pre-wrap; word-break: break-word;"></pre>
+                        </div>
+                        <button type="button" id="btnCopyScript" style="background-color: #27ae60; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-weight: bold;">Copiar Script</button>
                     </div>
                 </div>
                 {% endif %}
@@ -735,6 +745,8 @@
                     const visitorCode = visitorCodeTextarea.value;
                     const frase = document.getElementById('visitor-input').value;
                     const outputPre = document.getElementById('visitor-output');
+                    const scriptPre = document.getElementById('visitor-script');
+                    const scriptSection = document.getElementById('visitor-script-section');
                     const visitorName = visitorSelect.value;
 
                     if (!gramatica.trim() || !frase.trim()) {
@@ -748,6 +760,8 @@
                     }
 
                     outputPre.textContent = 'A executar...';
+                    if (scriptPre) scriptPre.textContent = '';
+                    if (scriptSection) scriptSection.style.display = 'none';
 
                     try {
                         const payload = {
@@ -775,16 +789,52 @@
                             if (data.stdout) {
                                 output += `[STDOUT]:\n${data.stdout}\n\n`;
                             }
+                            
+                            let resultStr = '';
                             if (data.result !== null && data.result !== undefined) {
-                                output += `[RESULTADO]:\n${JSON.stringify(data.result, null, 2)}`;
+                                resultStr = JSON.stringify(data.result, null, 2);
+                                output += `[RESULTADO]:\n${resultStr}`;
                             }
+                            
                             outputPre.textContent = output || 'Execução concluída sem output.';
+                            
+                            // Se o resultado é uma string que parece um script (começa com #!/bin/bash), mostrar no painel de script
+                            if (typeof data.result === 'string' && data.result.includes('#!/bin/bash')) {
+                                if (scriptPre) scriptPre.textContent = data.result;
+                                if (scriptSection) scriptSection.style.display = 'block';
+                            }
                         } else {
                             outputPre.textContent = `Erro: ${data.error || 'Ocorreu um erro desconhecido.'}`;
                         }
                     } catch (e) {
                         outputPre.textContent = `Erro de comunicação: ${e.message}`;
                     }
+                });
+            }
+
+            // Botão para copiar script
+            const btnCopyScript = document.getElementById('btnCopyScript');
+            const scriptPre = document.getElementById('visitor-script');
+            if (btnCopyScript && scriptPre) {
+                btnCopyScript.addEventListener('click', function() {
+                    const script = scriptPre.textContent;
+                    if (!script) {
+                        showToast('Nenhum script para copiar!');
+                        return;
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(script);
+                    } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = script;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try {
+                            document.execCommand('copy');
+                        } catch(e){}
+                        ta.remove();
+                    }
+                    showToast('Script copiado para clipboard!');
                 });
             }
 

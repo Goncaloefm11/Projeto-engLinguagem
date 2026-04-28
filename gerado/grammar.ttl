@@ -1,0 +1,72 @@
+@prefix ex: <http://example.org/grammar#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+ex:Grammar a owl:Class .
+ex:NonTerminal a owl:Class .
+ex:Terminal a owl:Class .
+ex:Production a owl:Class .
+ex:Conflict a owl:Class .
+
+ex:Z a ex:Grammar ; rdfs:label "Grammar" .
+ex:T_sym a ex:Terminal ; rdfs:label "]" .
+ex:T_sym a ex:Terminal ; rdfs:label ")" .
+ex:T_sym a ex:Terminal ; rdfs:label "[" .
+ex:T_eps a ex:Terminal ; rdfs:label "ε" .
+ex:T_sym a ex:Terminal ; rdfs:label "[^<>]+" .
+ex:T_sym a ex:Terminal ; rdfs:label "(" .
+ex:NT_Z a ex:NonTerminal ; rdfs:label "Z" .
+ex:Z ex:hasNonTerminal ex:NT_Z .
+ex:NT_Z ex:firstSet "(,[" .
+ex:NT_Z ex:followSet "$" .
+ex:NT_Dir a ex:NonTerminal ; rdfs:label "Dir" .
+ex:Z ex:hasNonTerminal ex:NT_Dir .
+ex:NT_Dir ex:firstSet "(,[" .
+ex:NT_Dir ex:followSet "$,(,),[" .
+ex:NT_string a ex:NonTerminal ; rdfs:label "string" .
+ex:Z ex:hasNonTerminal ex:NT_string .
+ex:NT_string ex:firstSet "[^<>]+" .
+ex:NT_string ex:followSet "(,),[,[^<>]+,]" .
+ex:NT_Ficheiro a ex:NonTerminal ; rdfs:label "Ficheiro" .
+ex:Z ex:hasNonTerminal ex:NT_Ficheiro .
+ex:NT_Ficheiro ex:firstSet "[" .
+ex:NT_Ficheiro ex:followSet "$,(,),[" .
+ex:NT_Conteudo a ex:NonTerminal ; rdfs:label "Conteudo" .
+ex:Z ex:hasNonTerminal ex:NT_Conteudo .
+ex:NT_Conteudo ex:firstSet "(,[,ε" .
+ex:NT_Conteudo ex:followSet ")" .
+ex:NT_Conteudo_P a ex:NonTerminal ; rdfs:label "Conteudo_P" .
+ex:Z ex:hasNonTerminal ex:NT_Conteudo_P .
+ex:NT_Conteudo_P ex:firstSet "(,[,ε" .
+ex:NT_Conteudo_P ex:followSet ")" .
+ex:P_Z_prod_0 a ex:Production ; ex:lhs ex:NT_Z ; rdfs:label "Dir" .
+ex:Z ex:hasProduction ex:P_Z_prod_0 .
+ex:P_Z_prod_0 ex:hasRHSNonTerminal ex:NT_Dir .
+ex:P_Dir_prod_0 a ex:Production ; ex:lhs ex:NT_Dir ; rdfs:label "( string Conteudo )" .
+ex:Z ex:hasProduction ex:P_Dir_prod_0 .
+ex:P_Dir_prod_0 ex:hasRHSTerminal ex:T_sym .
+ex:P_Dir_prod_0 ex:hasRHSNonTerminal ex:NT_string .
+ex:P_Dir_prod_0 ex:hasRHSNonTerminal ex:NT_Conteudo .
+ex:P_Dir_prod_0 ex:hasRHSTerminal ex:T_sym .
+ex:P_Dir_prod_1 a ex:Production ; ex:lhs ex:NT_Dir ; rdfs:label "Ficheiro" .
+ex:Z ex:hasProduction ex:P_Dir_prod_1 .
+ex:P_Dir_prod_1 ex:hasRHSNonTerminal ex:NT_Ficheiro .
+ex:P_string_prod_0 a ex:Production ; ex:lhs ex:NT_string ; rdfs:label "[^<>]+" .
+ex:Z ex:hasProduction ex:P_string_prod_0 .
+ex:P_string_prod_0 ex:hasRHSTerminal ex:T_sym .
+ex:P_Ficheiro_prod_0 a ex:Production ; ex:lhs ex:NT_Ficheiro ; rdfs:label "[ string string ]" .
+ex:Z ex:hasProduction ex:P_Ficheiro_prod_0 .
+ex:P_Ficheiro_prod_0 ex:hasRHSTerminal ex:T_sym .
+ex:P_Ficheiro_prod_0 ex:hasRHSNonTerminal ex:NT_string .
+ex:P_Ficheiro_prod_0 ex:hasRHSNonTerminal ex:NT_string .
+ex:P_Ficheiro_prod_0 ex:hasRHSTerminal ex:T_sym .
+ex:P_Conteudo_prod_0 a ex:Production ; ex:lhs ex:NT_Conteudo ; rdfs:label "Conteudo_P" .
+ex:Z ex:hasProduction ex:P_Conteudo_prod_0 .
+ex:P_Conteudo_prod_0 ex:hasRHSNonTerminal ex:NT_Conteudo_P .
+ex:P_Conteudo_P_prod_0 a ex:Production ; ex:lhs ex:NT_Conteudo_P ; rdfs:label "Dir Conteudo_P" .
+ex:Z ex:hasProduction ex:P_Conteudo_P_prod_0 .
+ex:P_Conteudo_P_prod_0 ex:hasRHSNonTerminal ex:NT_Dir .
+ex:P_Conteudo_P_prod_0 ex:hasRHSNonTerminal ex:NT_Conteudo_P .
+ex:P_Conteudo_P_prod_1 a ex:Production ; ex:lhs ex:NT_Conteudo_P ; rdfs:label "ε" .
+ex:Z ex:hasProduction ex:P_Conteudo_P_prod_1 .
+ex:P_Conteudo_P_prod_1 ex:hasRHSTerminal ex:T_eps .
