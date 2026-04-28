@@ -1,3 +1,4 @@
+#core/lexer.py
 """
 Lexer para análise léxica.
 Produz uma lista de tokens compatível com o parser recursivo descendente LL(1).

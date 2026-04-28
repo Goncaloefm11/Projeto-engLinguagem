@@ -644,8 +644,9 @@ def index():
                             codigo_visitor = ''
 
                     if codigo_visitor:
-                        visitor_path = os.path.join(gerado_dir, 'visitor_generated.py')
-                        with open(visitor_path, 'w', encoding='utf-8') as fp:
+                        # Guardar o visitor gerado automaticamente
+                        visitor_auto_path = os.path.join(gerado_dir, 'visitor_auto.py')
+                        with open(visitor_auto_path, 'w', encoding='utf-8') as fp:
                             fp.write(codigo_visitor)
 
                     # Gerar ontologia Turtle para a gramática (opcional)
@@ -663,8 +664,6 @@ def index():
                         resultado = {}
                     resultado['gerado_dir'] = gerado_dir
                     resultado['parser_path'] = parser_path
-                    if codigo_visitor:
-                        resultado['visitor_path'] = visitor_path
             except Exception:
                 # Não queremos falhar o fluxo principal só porque a escrita falhou.
                 # Guardamos a mensagem de erro em resultado para debug opcional.
@@ -743,9 +742,168 @@ def index():
                            aviso_conflitos_persistentes=aviso_conflitos_persistentes)
 
 
-@app.route('/download_generated/<path:filename>', methods=['GET'])
-def download_generated(filename):
-    # Serve files da pasta gerado criada pelo app (seguro o suficiente para dev)
+@app.route('/api/list_visitors', methods=['GET'])
+def list_visitors_api():
+    """Lista todos os visitors disponíveis na pasta gerado."""
+    try:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        gerado_dir = os.path.join(project_root, 'gerado')
+        
+        visitors = []
+        if os.path.exists(gerado_dir):
+            for filename in os.listdir(gerado_dir):
+                if filename.startswith('visitor_') and filename.endswith('.py'):
+                    filepath = os.path.join(gerado_dir, filename)
+                    visitors.append({
+                        'name': filename[:-3],  # Remove .py
+                        'filename': filename,
+                        'is_auto': filename == 'visitor_auto.py'
+                    })
+        
+        visitors.sort(key=lambda x: (not x['is_auto'], x['name']))  # Auto first
+        return {'visitors': visitors}
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+
+@app.route('/api/run_visitor', methods=['POST'])
+def run_visitor_api():
+    data = request.get_json()
+    gramatica_texto = data.get('gramatica', '')
+    visitor_code = data.get('visitor_code', '')
+    frase = data.get('frase', '')
+    visitor_name = data.get('visitor_name', None)  # Nome do visitor a usar (opcional)
+
+    if not all([gramatica_texto, frase]):
+        return {'error': 'Gramática e frase são obrigatórios.'}, 400
+    
+    # Se visitor_name foi fornecido, tenta carregar do ficheiro
+    if visitor_name:
+        try:
+            project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            gerado_dir = os.path.join(project_root, 'gerado')
+            visitor_file = os.path.join(gerado_dir, f'{visitor_name}.py')
+            if os.path.exists(visitor_file):
+                with open(visitor_file, 'r', encoding='utf-8') as fp:
+                    visitor_code = fp.read()
+        except Exception as e:
+            return {'error': f"Erro ao carregar visitor '{visitor_name}': {str(e)}"}, 400
+    elif not visitor_code:
+        return {'error': 'Código do visitor ou nome do visitor são obrigatórios.'}, 400
+
+    try:
+        # 1. Gerar a árvore a partir da gramática e da frase
+        gramatica = carregar_gramatica_da_string(gramatica_texto)
+        firsts = calcular_first(gramatica)
+        follows = calcular_follow(gramatica, firsts)
+        tabela, _ = gerar_tabela_ll1(gramatica, firsts, follows)
+        
+        tokens, erro_tok = tokenizar_frase(frase, gramatica)
+        if erro_tok:
+            return {'error': f"Erro de tokenização: {erro_tok}"}, 400
+
+        arvore, erro_parse = gerar_arvore_derivacao_com_erro(tokens, gramatica, tabela)
+        if erro_parse:
+            return {'error': f"Erro de parsing: {erro_parse}"}, 400
+
+        # 2. Executar o código do visitor para o ter no scope
+        visitor_module = types.ModuleType('visitor_module')
+        exec(visitor_code, visitor_module.__dict__)
+
+        # 3. Procura pela classe do visitor
+        VisitorClass = getattr(visitor_module, 'TreeVisitor', None)
+        if not VisitorClass:
+            # Tenta encontrar qualquer classe que não seja 'NodeVisitor' ou built-in
+            for name, obj in visitor_module.__dict__.items():
+                if isinstance(obj, type) and name not in ('NodeVisitor', 'object') and not name.startswith('_'):
+                    # Verifica se tem método 'visit'
+                    if hasattr(obj, 'visit'):
+                        VisitorClass = obj
+                        break
+        
+        if not VisitorClass:
+            return {'error': "Não foi encontrada uma classe de Visitor com método 'visit'."}, 400
+
+        visitor_instance = VisitorClass()
+        
+        # 4. Executar o visitor na árvore
+        # O 'visit' pode retornar qualquer coisa, então capturamos a saída
+        # e também o que for printado para stdout.
+        stdout_buf = io.StringIO()
+        with contextlib.redirect_stdout(stdout_buf):
+            result = visitor_instance.visit(arvore)
+        
+        stdout_output = stdout_buf.getvalue()
+
+        # Prepara o resultado para ser JSON serializável
+        final_result = result
+        if isinstance(result, (dict, list, str, int, float, bool, type(None))):
+            final_result = result
+        else:
+            # Tenta converter para string se não for um tipo básico
+            try:
+                final_result = str(result)
+            except:
+                final_result = f"Resultado do tipo '{type(result).__name__}' não é serializável."
+
+        return {
+            'result': final_result,
+            'stdout': stdout_output
+        }
+
+    except Exception as e:
+        return {'error': f"Erro ao executar o visitor: {traceback.format_exc()}"}, 500
+
+
+@app.route('/api/save_visitor', methods=['POST'])
+def save_visitor_api():
+    """Guarda um novo visitor na pasta gerado."""
+    try:
+        data = request.get_json()
+        name = data.get('name', '').strip()
+        code = data.get('code', '').strip()
+        
+        if not name or not code:
+            return {'error': 'Nome e código do visitor são obrigatórios.'}, 400
+        
+        # Validar nome (apenas caracteres seguros)
+        if not re.match(r'^[a-zA-Z0-9_]+$', name):
+            return {'error': 'Nome do visitor deve conter apenas letras, números e underscore.'}, 400
+        
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        gerado_dir = os.path.join(project_root, 'gerado')
+        os.makedirs(gerado_dir, exist_ok=True)
+        
+        visitor_path = os.path.join(gerado_dir, f'{name}.py')
+        with open(visitor_path, 'w', encoding='utf-8') as fp:
+            fp.write(code)
+        
+        return {'success': True, 'message': f"Visitor '{name}' guardado com sucesso."}
+    except Exception as e:
+        return {'error': f"Erro ao guardar visitor: {str(e)}"}, 500
+
+
+@app.route('/gerado/<path:filename>', methods=['GET'])
+def serve_gerado(filename):
+    """Serve ficheiros da pasta gerado."""
+    try:
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        gerado_dir = os.path.join(project_root, 'gerado')
+        
+        # Segurança: verificar que o ficheiro está dentro da pasta gerado
+        requested_path = os.path.join(gerado_dir, filename)
+        if not os.path.abspath(requested_path).startswith(os.path.abspath(gerado_dir)):
+            return {'error': 'Acesso negado.'}, 403
+        
+        if os.path.exists(requested_path):
+            return send_from_directory(gerado_dir, filename)
+        else:
+            return {'error': 'Ficheiro não encontrado.'}, 404
+    except Exception as e:
+        return {'error': str(e)}, 500
+
+
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     gerado_dir = os.path.join(project_root, 'gerado')
     return send_from_directory(gerado_dir, filename, as_attachment=True)

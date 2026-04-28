@@ -361,17 +361,14 @@
 
                 {% if codigo_parser %}
                 <div class="section">
-                    <h3>Parser Recursivo Descendente & Visitor</h3>
+                    <h3>Parser e Visitor</h3>
                     <div class="panels">
                         <div class="panel">
                             <div class="panel-header">
-                                <strong>Parser</strong>
+                                <strong>Parser Gerado</strong>
                                 <div>
                                     <button type="button" class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
                                     <button type="button" class="small-btn ghost" id="btnCopyParser">Copiar</button>
-                                        {% if resultado and resultado.ontology_filename %}
-                                            <a class="small-btn ghost" id="btnDownloadOntology" href="/download_generated/{{ resultado.ontology_filename }}">Ontologia (.ttl)</a>
-                                        {% endif %}
                                 </div>
                             </div>
                             <div>
@@ -381,14 +378,36 @@
 
                         <div class="panel">
                             <div class="panel-header">
-                                <strong>Visitor </strong>
+                                <strong>Visitor Editável</strong>
                                 <div>
                                     <button type="button" class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
                                     <button type="button" class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
                                 </div>
                             </div>
+                            <div style="margin-bottom: 10px;">
+                                <label for="visitor-select" style="display: block; margin-bottom: 5px;"><strong>Escolher Visitor:</strong></label>
+                                <select id="visitor-select" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                                    <option value="">-- A carregar visitors --</option>
+                                </select>
+                            </div>
                             <div>
-                                <pre class="code-block"><code id="visitor-code-block" class="language-python">{{ codigo_visitor }}</code></pre>
+                                <textarea id="visitor-code-textarea" class="code-block" style="height: 300px; width: 100%; box-sizing: border-box;">{{ codigo_visitor }}</textarea>
+                            </div>
+                            <div style="margin-top: 8px; display: flex; gap: 8px;">
+                                <button type="button" id="btnSaveVisitor" class="btn btn-success" style="background-color: #27ae60; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; flex: 1;">Guardar Visitor</button>
+                                <button type="button" id="btnReloadVisitor" class="btn btn-secondary" style="background-color: #95a5a6; color: white; padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer;">Recarregar</button>
+                            </div>
+                            <div id="visitor-interaction" style="margin-top: 15px;">
+                                <h5>Testar Visitor</h5>
+                                <div class="form-group">
+                                    <label for="visitor-input">Frase para input:</label>
+                                    <input type="text" id="visitor-input" class="form-control" placeholder="Forneça a frase para gerar a árvore...">
+                                </div>
+                                <button type="button" id="run-visitor-btn" class="btn btn-primary mt-2" style="background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer;">Executar Visitor</button>
+                                <div style="margin-top: 10px;">
+                                    <strong>Resultado (Árvore Gerada):</strong>
+                                    <pre id="visitor-output" style="background: #f4f4f4; padding: 10px; border-radius: 4px; min-height: 50px; max-height: 200px; overflow: auto;"></pre>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -580,24 +599,45 @@
 
             // 'Testar com Lexer' removed — form testing handled via Analysis flow
 
+            // Carregar lista de visitors disponíveis
+            async function loadVisitorsList() {
+                try {
+                    const response = await fetch('/api/list_visitors');
+                    const data = await response.json();
+                    const select = document.getElementById('visitor-select');
+                    
+                    if (select && data.visitors) {
+                        select.innerHTML = '<option value="">-- Novo Visitor --</option>';
+                        data.visitors.forEach(v => {
+                            const option = document.createElement('option');
+                            option.value = v.name;
+                            option.textContent = v.name + (v.is_auto ? ' (Gerado automaticamente)' : ' (Customizado)');
+                            select.appendChild(option);
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Erro ao carregar visitors:', e);
+                }
+            }
+
             // Visitor buttons (download / copy)
             const btnDownloadVisitor = document.getElementById('btnDownloadVisitor');
             const btnCopyVisitor = document.getElementById('btnCopyVisitor');
-            const visitorCodeElem = document.getElementById('visitor-code-block');
+            const visitorCodeTextarea = document.getElementById('visitor-code-textarea');
 
-            if (btnDownloadVisitor && visitorCodeElem) {
+            if (btnDownloadVisitor && visitorCodeTextarea) {
                 btnDownloadVisitor.addEventListener('click', function(){
-                    const code = visitorCodeElem ? visitorCodeElem.innerText : '';
+                    const code = visitorCodeTextarea.value;
                     const blob = new Blob([code], {type: 'text/x-python;charset=utf-8'});
                     const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a'); a.href = url; a.download = 'visitor_generated.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                    showToast('Visitor (visitor_generated.py) descarregado com sucesso!');
+                    const a = document.createElement('a'); a.href = url; a.download = 'visitor.py'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+                    showToast('Visitor descarregado com sucesso!');
                 });
             }
 
-            if (btnCopyVisitor && visitorCodeElem) {
+            if (btnCopyVisitor && visitorCodeTextarea) {
                 btnCopyVisitor.addEventListener('click', function(){
-                    const code = visitorCodeElem ? visitorCodeElem.innerText : '';
+                    const code = visitorCodeTextarea.value;
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(code);
                     } else {
@@ -605,6 +645,152 @@
                     }
                     showToast('Código do visitor copiado para clipboard!');
                 });
+            }
+
+            // Visitor selection
+            const visitorSelect = document.getElementById('visitor-select');
+            if (visitorSelect) {
+                visitorSelect.addEventListener('change', async function() {
+                    const visitorName = this.value;
+                    if (!visitorName) {
+                        visitorCodeTextarea.value = '';
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/gerado/${visitorName}.py`);
+                        if (response.ok) {
+                            const code = await response.text();
+                            visitorCodeTextarea.value = code;
+                            showToast(`Visitor '${visitorName}' carregado!`);
+                        } else {
+                            showToast('Erro ao carregar visitor!');
+                        }
+                    } catch (e) {
+                        showToast(`Erro: ${e.message}`);
+                    }
+                });
+            }
+
+            // Save visitor button
+            const btnSaveVisitor = document.getElementById('btnSaveVisitor');
+            if (btnSaveVisitor) {
+                btnSaveVisitor.addEventListener('click', async function() {
+                    const code = visitorCodeTextarea.value;
+                    if (!code.trim()) {
+                        showToast('O código do visitor não pode estar vazio!');
+                        return;
+                    }
+
+                    // Pedir nome ao utilizador
+                    const currentName = visitorSelect.value || 'visitor_custom';
+                    const newName = prompt('Nome para guardar o visitor:', currentName);
+                    
+                    if (!newName) return;
+
+                    try {
+                        const response = await fetch('/api/save_visitor', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                name: newName,
+                                code: code
+                            })
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            showToast(`Visitor '${newName}' guardado com sucesso!`);
+                            // Recarregar lista de visitors
+                            loadVisitorsList();
+                            visitorSelect.value = newName;
+                        } else {
+                            showToast(`Erro ao guardar: ${data.error}`);
+                        }
+                    } catch (e) {
+                        showToast(`Erro: ${e.message}`);
+                    }
+                });
+            }
+
+            // Reload visitor button
+            const btnReloadVisitor = document.getElementById('btnReloadVisitor');
+            if (btnReloadVisitor) {
+                btnReloadVisitor.addEventListener('click', function() {
+                    const visitorName = visitorSelect.value;
+                    if (visitorName) {
+                        visitorSelect.dispatchEvent(new Event('change'));
+                    } else {
+                        visitorCodeTextarea.value = '';
+                        showToast('Visitor recarregado!');
+                    }
+                });
+            }
+
+            // Visitor interaction logic
+            const runVisitorBtn = document.getElementById('run-visitor-btn');
+            if (runVisitorBtn) {
+                runVisitorBtn.addEventListener('click', async function() {
+                    const gramatica = document.getElementById('gramaticaTexto').value;
+                    const visitorCode = visitorCodeTextarea.value;
+                    const frase = document.getElementById('visitor-input').value;
+                    const outputPre = document.getElementById('visitor-output');
+                    const visitorName = visitorSelect.value;
+
+                    if (!gramatica.trim() || !frase.trim()) {
+                        showToast('Gramática e frase são obrigatórias!');
+                        return;
+                    }
+
+                    if (!visitorCode.trim() && !visitorName) {
+                        showToast('Código do visitor ou visitor selecionado é obrigatório!');
+                        return;
+                    }
+
+                    outputPre.textContent = 'A executar...';
+
+                    try {
+                        const payload = {
+                            gramatica: gramatica,
+                            frase: frase
+                        };
+
+                        // Usar visitor_name se selecionado, senão usar o código editado
+                        if (visitorName) {
+                            payload.visitor_name = visitorName;
+                        } else {
+                            payload.visitor_code = visitorCode;
+                        }
+
+                        const response = await fetch('/api/run_visitor', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            let output = '';
+                            if (data.stdout) {
+                                output += `[STDOUT]:\n${data.stdout}\n\n`;
+                            }
+                            if (data.result !== null && data.result !== undefined) {
+                                output += `[RESULTADO]:\n${JSON.stringify(data.result, null, 2)}`;
+                            }
+                            outputPre.textContent = output || 'Execução concluída sem output.';
+                        } else {
+                            outputPre.textContent = `Erro: ${data.error || 'Ocorreu um erro desconhecido.'}`;
+                        }
+                    } catch (e) {
+                        outputPre.textContent = `Erro de comunicação: ${e.message}`;
+                    }
+                });
+            }
+
+            // Carregar lista de visitors ao abrir a página
+            if (visitorSelect) {
+                loadVisitorsList();
             }
 
             // Ontology download button
