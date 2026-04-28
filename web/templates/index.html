@@ -423,6 +423,69 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% if codigo_parser %}
+                <div class="section">
+                    <h3>Ontologia RDF/OWL</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Ficheiro RDF:</strong></label>
+                        <pre id="ontology-output" style="background: #f4f4f4; padding: 15px; border-radius: 4px; min-height: 100px; max-height: 250px; overflow: auto; font-size: 11px; border: 1px solid #ddd; font-family: monospace;"></pre>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Conflitos Encontrados:</strong></label>
+                        <pre id="ontology-conflicts" style="background: #fff3cd; padding: 15px; border-radius: 4px; min-height: 50px; max-height: 150px; overflow: auto; font-size: 12px; border: 1px solid #ffc107; color: #856404;"></pre>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="btnDownloadOntology" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Descarregar RDF</button>
+                        <button type="button" id="btnCopyOntology" style="background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Copiar RDF</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🔍 SPARQL Query</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Exemplos de Queries:</strong></label>
+                        <select id="sparqlExampleSelect" onchange="carregarExemploSparql()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; margin-bottom: 10px;">
+                            <option value="">-- Selecionar Query de Exemplo --</option>
+                            <option value="all-terminals">Listar todos os Terminais</option>
+                            <option value="all-nonterminals">Listar todos os Não-Terminais</option>
+                            <option value="all-productions">Listar todas as Produções</option>
+                            <option value="conflicts">Listar todos os Conflitos</option>
+                            <option value="production-symbols">Símbolos por Produção</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Query SPARQL:</strong></label>
+                        <textarea id="sparqlQueryInput" placeholder="PREFIX ex: &lt;http://example.org/grammar#&gt;
+SELECT ?terminal ?label
+WHERE {
+  ?terminal a ex:Terminal ;
+           rdfs:label ?label .
+}" style="width: 100%; height: 150px; font-family: 'Fira Code', monospace; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
+                    </div>
+
+                    <button type="button" id="btnRunSparql" style="background-color: #9b59b6; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px;">Executar Query</button>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Resultados:</strong></label>
+                        <div id="sparql-results-container" style="background: #f4f4f4; padding: 15px; border-radius: 4px; min-height: 100px; max-height: 350px; overflow: auto; border: 1px solid #ddd;">
+                            <div id="sparql-results" style="font-family: monospace; font-size: 12px; white-space: pre-wrap;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="btnCopySparqlResults" style="background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Copiar Resultados</button>
+                        <button type="button" id="btnDownloadSparqlResults" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Descarregar JSON</button>
+                    </div>
+                </div>
+                {% endif %}
+
+
             {% endif %}
         {% endif %}
         </div>
@@ -843,13 +906,238 @@
                 loadVisitorsList();
             }
 
-            // Ontology download button
+            // ==================== ONTOLOGY HANDLERS ====================
+            // Nota: Ontologia é gerada automaticamente quando a gramática é analisada
+            
+            // Botão para descarregar ontologia
             const btnDownloadOntology = document.getElementById('btnDownloadOntology');
             if (btnDownloadOntology) {
-                btnDownloadOntology.addEventListener('click', function(){
-                    showToast('Ontologia (grammar.ttl) descarregada com sucesso!');
+                btnDownloadOntology.addEventListener('click', function() {
+                    const ontologyOutput = document.getElementById('ontology-output');
+                    const content = ontologyOutput.textContent;
+                    
+                    if (!content || content.includes('A exportar')) {
+                        showToast('Exporte a ontologia primeiro!');
+                        return;
+                    }
+                    
+                    const element = document.createElement('a');
+                    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+                    element.setAttribute('download', 'grammar.ttl');
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    showToast('grammar.ttl descarregado!');
                 });
             }
+            
+            // Botão para copiar ontologia
+            const btnCopyOntology = document.getElementById('btnCopyOntology');
+            if (btnCopyOntology) {
+                btnCopyOntology.addEventListener('click', function() {
+                    const ontologyOutput = document.getElementById('ontology-output');
+                    const content = ontologyOutput.textContent;
+                    
+                    if (!content || content.includes('A exportar')) {
+                        showToast('Exporte a ontologia primeiro!');
+                        return;
+                    }
+                    
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(content);
+                    } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = content;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try {
+                            document.execCommand('copy');
+                        } catch(e){}
+                        ta.remove();
+                    }
+                    showToast('Ontologia copiada para clipboard!');
+                });
+            }
+
+            // ==================== SPARQL HANDLERS ====================
+
+            // Exemplos de queries SPARQL
+            const sparqlExamples = {
+                'all-terminals': `PREFIX ex: <http://example.org/grammar#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?terminal ?label
+WHERE {
+  ?terminal a ex:Terminal ;
+           rdfs:label ?label .
+}
+ORDER BY ?label`,
+
+                'all-nonterminals': `PREFIX ex: <http://example.org/grammar#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?nonterminal ?label ?firstSet
+WHERE {
+  ?nonterminal a ex:NonTerminal ;
+              rdfs:label ?label ;
+              ex:firstSet ?firstSet .
+}
+ORDER BY ?label`,
+
+                'all-productions': `PREFIX ex: <http://example.org/grammar#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?production ?lhs ?label
+WHERE {
+  ?production a ex:Production ;
+             ex:lhs ?lhs ;
+             rdfs:label ?label .
+  ?lhs rdfs:label ?lhsLabel .
+}
+ORDER BY ?lhsLabel ?label`,
+
+                'conflicts': `PREFIX ex: <http://example.org/grammar#>
+
+SELECT ?conflict
+WHERE {
+  ?conflict a ex:Conflict .
+}`,
+
+                'production-symbols': `PREFIX ex: <http://example.org/grammar#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?prod ?label ?rhs ?rhsLabel
+WHERE {
+  ?prod a ex:Production ;
+       rdfs:label ?label ;
+       ?p ?rhs .
+  ?rhs rdfs:label ?rhsLabel .
+  FILTER (?p IN (ex:hasRHSTerminal, ex:hasRHSNonTerminal))
+}
+LIMIT 50`
+            };
+
+            // Carregar exemplo SPARQL
+            window.carregarExemploSparql = function() {
+                const select = document.getElementById('sparqlExampleSelect');
+                const queryInput = document.getElementById('sparqlQueryInput');
+                const exemplo = select.value;
+                
+                if (exemplo && sparqlExamples[exemplo]) {
+                    queryInput.value = sparqlExamples[exemplo];
+                }
+            };
+
+            // Botão para executar SPARQL
+            const btnRunSparql = document.getElementById('btnRunSparql');
+            if (btnRunSparql) {
+                btnRunSparql.addEventListener('click', async function() {
+                    const queryInput = document.getElementById('sparqlQueryInput');
+                    const resultsDiv = document.getElementById('sparql-results');
+                    const query = queryInput.value.trim();
+                    
+                    if (!query) {
+                        showToast('Query SPARQL vazia!');
+                        return;
+                    }
+                    
+                    resultsDiv.textContent = 'A executar query...';
+                    
+                    try {
+                        const response = await fetch('/api/run_sparql_query', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: query })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            // Formatar resultados em tabela
+                            if (data.results && data.results.length > 0) {
+                                if (data.variables && data.variables.length > 0) {
+                                    // Tabela formatada
+                                    let table = 'Variáveis: ' + data.variables.join(', ') + '\n\n';
+                                    table += data.results.map(row => {
+                                        return Object.entries(row)
+                                            .map(([k, v]) => `${k}: ${v}`)
+                                            .join(' | ');
+                                    }).join('\n');
+                                    resultsDiv.textContent = table;
+                                } else {
+                                    // Resultados simples
+                                    resultsDiv.textContent = JSON.stringify(data.results, null, 2);
+                                }
+                                resultsDiv.style.color = '#27ae60';
+                                showToast(`${data.count} resultado(s) encontrado(s)!`);
+                            } else {
+                                resultsDiv.textContent = 'Nenhum resultado encontrado.';
+                                resultsDiv.style.color = '#666';
+                            }
+                            
+                            // Guardar último resultado para download
+                            window.lastSparqlResults = data.results;
+                        } else {
+                            resultsDiv.textContent = `Erro: ${data.error || 'Erro desconhecido.'}`;
+                            resultsDiv.style.color = '#c0392b';
+                        }
+                    } catch (e) {
+                        resultsDiv.textContent = `Erro de comunicação: ${e.message}`;
+                        resultsDiv.style.color = '#c0392b';
+                    }
+                });
+            }
+
+            // Botão para copiar resultados SPARQL
+            const btnCopySparqlResults = document.getElementById('btnCopySparqlResults');
+            if (btnCopySparqlResults) {
+                btnCopySparqlResults.addEventListener('click', function() {
+                    const resultsDiv = document.getElementById('sparql-results');
+                    const content = resultsDiv.textContent;
+                    
+                    if (!content || content.includes('A executar')) {
+                        showToast('Execute uma query primeiro!');
+                        return;
+                    }
+                    
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(content);
+                    } else {
+                        const ta = document.createElement('textarea');
+                        ta.value = content;
+                        document.body.appendChild(ta);
+                        ta.select();
+                        try {
+                            document.execCommand('copy');
+                        } catch(e){}
+                        ta.remove();
+                    }
+                    showToast('Resultados copiados para clipboard!');
+                });
+            }
+
+            // Botão para descarregar resultados SPARQL
+            const btnDownloadSparqlResults = document.getElementById('btnDownloadSparqlResults');
+            if (btnDownloadSparqlResults) {
+                btnDownloadSparqlResults.addEventListener('click', function() {
+                    if (!window.lastSparqlResults || window.lastSparqlResults.length === 0) {
+                        showToast('Execute uma query primeiro!');
+                        return;
+                    }
+                    
+                    const content = JSON.stringify(window.lastSparqlResults, null, 2);
+                    const element = document.createElement('a');
+                    element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(content));
+                    element.setAttribute('download', 'sparql_results.json');
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    showToast('sparql_results.json descarregado!');
+                });
+            }
+
         });
 
         // Desenho da Árvore com D3.js
@@ -887,6 +1175,33 @@
             } catch(e) {
                 console.warn('Highlight.js init failed', e);
             }
+            
+            // ==================== ONTOLOGIA AUTOMÁTICA ====================
+            // Exibir ontologia se foi gerada
+            {% if resultado and resultado.ontology_content %}
+            const ontologyContent = `{{ resultado.ontology_content | safe }}`;
+            const ontologyOutput = document.getElementById('ontology-output');
+            const conflictsOutput = document.getElementById('ontology-conflicts');
+            
+            if (ontologyOutput) {
+                ontologyOutput.textContent = ontologyContent;
+                
+                // Exibir conflitos
+                {% if resultado.conflitos %}
+                const conflitos = {{ resultado.conflitos|tojson }};
+                if (conflitos && conflitos.length > 0) {
+                    conflictsOutput.textContent = 'Conflitos encontrados:\n\n' + conflitos.join('\n');
+                    conflictsOutput.style.background = '#fff3cd';
+                } else {
+                    conflictsOutput.textContent = 'Nenhum conflito encontrado! ✓';
+                    conflictsOutput.style.background = '#d4edda';
+                }
+                {% else %}
+                conflictsOutput.textContent = 'Nenhum conflito encontrado! ✓';
+                conflictsOutput.style.background = '#d4edda';
+                {% endif %}
+            }
+            {% endif %}
             
             // Gravar e restaurar o scroll (evitar a sensação de "salto" no refresh do Analisar)
             const scrollPosEsq = sessionStorage.getItem('scrollEsq');

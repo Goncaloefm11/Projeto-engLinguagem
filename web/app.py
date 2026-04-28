@@ -623,6 +623,7 @@ def index():
 
             # Se a gramática foi aceite (sem conflitos LL(1)) e temos código gerado,
             # gravamos automaticamente os ficheiros na pasta 'gerado' do projecto.
+            ontology_content = None
             try:
                 if codigo_parser and not conf:
                     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -649,21 +650,28 @@ def index():
                         with open(visitor_auto_path, 'w', encoding='utf-8') as fp:
                             fp.write(codigo_visitor)
 
-                    # Gerar ontologia Turtle para a gramática (opcional)
-                    try:
-                        ontology_path = os.path.join(gerado_dir, 'grammar.ttl')
-                        gerar_ontologia(g, firsts=f, follows=fol, conflitos=conf, out_path=ontology_path)
-                        resultado['ontology_path'] = ontology_path
-                        resultado['ontology_filename'] = os.path.basename(ontology_path)
-                    except Exception:
-                        # não fatal
-                        pass
-
                     # Disponibiliza caminhos no resultado para UI se necessário
                     if resultado is None:
                         resultado = {}
                     resultado['gerado_dir'] = gerado_dir
                     resultado['parser_path'] = parser_path
+                else:
+                    # Mesmo com conflitos, criar pasta gerado para ontologia
+                    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    gerado_dir = os.path.join(project_root, 'gerado')
+                    os.makedirs(gerado_dir, exist_ok=True)
+                    
+                # Gerar ontologia Turtle para a gramática sempre (com ou sem conflitos)
+                try:
+                    ontology_path = os.path.join(gerado_dir, 'grammar.ttl')
+                    gerar_ontologia(g, firsts=f, follows=fol, conflitos=conf, out_path=ontology_path)
+                    # Ler o conteúdo para passar ao template
+                    with open(ontology_path, 'r', encoding='utf-8') as fp:
+                        ontology_content = fp.read()
+                except Exception:
+                    # não fatal
+                    pass
+                    
             except Exception:
                 # Não queremos falhar o fluxo principal só porque a escrita falhou.
                 # Guardamos a mensagem de erro em resultado para debug opcional.
@@ -674,7 +682,8 @@ def index():
             resultado = {
                 'gramatica': g, 'tabela': tab, 'conflitos': conf, 'arvore': None,
                 'first': f, 'follow': fol, 'erro_frase': None,
-                'frase_sugestao': gerar_frase_exemplo_simples(g)
+                'frase_sugestao': gerar_frase_exemplo_simples(g),
+                'ontology_content': ontology_content
             }
 
             # NOTE: 'Testar com Lexer' feature removed — tokenization/testing
@@ -881,6 +890,100 @@ def save_visitor_api():
         return {'success': True, 'message': f"Visitor '{name}' guardado com sucesso."}
     except Exception as e:
         return {'error': f"Erro ao guardar visitor: {str(e)}"}, 500
+
+
+@app.route('/api/export_ontology', methods=['POST'])
+def api_export_ontology():
+    """Exporta a ontologia RDF para o ficheiro grammar.ttl."""
+    try:
+        data = request.get_json()
+        gramatica_texto = data.get('gramatica', '')
+        
+        if not gramatica_texto.strip():
+            return {'error': 'Gramática vazia.'}, 400
+        
+        # Parse da gramática
+        gramatica = carregar_gramatica_da_string(gramatica_texto)
+        
+        # Calcular FIRST, FOLLOW e conflitos
+        firsts = calcular_first(gramatica)
+        follows = calcular_follow(gramatica, firsts)
+        tabela, conflitos = gerar_tabela_ll1(gramatica, firsts, follows)
+        
+        # Gerar ontologia com conflitos
+        out_path = gerar_ontologia(gramatica, firsts, follows, conflitos, 'grammar.ttl')
+        
+        # Ler e retornar o conteúdo
+        with open(out_path, 'r', encoding='utf-8') as f:
+            ttl_content = f.read()
+        
+        return {
+            'success': True,
+            'content': ttl_content,
+            'conflitos': conflitos,
+            'filename': 'grammar.ttl'
+        }
+    except Exception as e:
+        return {'error': f"Erro ao exportar ontologia: {str(e)}"}, 500
+
+
+@app.route('/api/run_sparql_query', methods=['POST'])
+def api_run_sparql_query():
+    """Executa uma query SPARQL contra a ontologia RDF."""
+    try:
+        # Tentar importar rdflib
+        try:
+            from rdflib import Graph
+        except ImportError:
+            return {
+                'error': 'rdflib não está instalado. Instale com: pip install rdflib',
+                'results': []
+            }, 400
+        
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        
+        if not query:
+            return {'error': 'Query SPARQL vazia.'}, 400
+        
+        # Caminho para a ontologia
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        ttl_path = os.path.join(project_root, 'gerado', 'grammar.ttl')
+        
+        if not os.path.exists(ttl_path):
+            return {'error': 'Ontologia não encontrada. Exporte a ontologia primeiro!'}, 404
+        
+        # Carregar e executar query
+        graph = Graph()
+        graph.parse(ttl_path, format='turtle')
+        
+        results = graph.query(query)
+        
+        # Converter resultados para formato legível
+        result_list = []
+        
+        # Se há variáveis, mostrar como tabela
+        if results.vars:
+            for row in results:
+                row_dict = {}
+                for var in results.vars:
+                    value = row[var]
+                    # Converter URIs para string legível
+                    row_dict[str(var)] = str(value) if value else 'None'
+                result_list.append(row_dict)
+        else:
+            # Query de tipo booleano (ASK) ou sem variáveis
+            result_list = list(results)
+        
+        return {
+            'success': True,
+            'results': result_list,
+            'count': len(result_list),
+            'variables': [str(v) for v in results.vars] if results.vars else []
+        }
+    except Exception as e:
+        return {'error': f"Erro ao executar query SPARQL: {str(e)}"}, 500
+
 
 
 @app.route('/gerado/<path:filename>', methods=['GET'])
