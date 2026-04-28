@@ -327,8 +327,8 @@
                             <div class="panel-header">
                                 <strong>Formato Textual</strong>
                                 <div>
-                                    <button class="small-btn" id="btnToggleTexto">Mostrar</button>
-                                    <button class="small-btn ghost" id="btnDownloadTexto">Descarregar</button>
+                                    <button type="button" class="small-btn" id="btnToggleTexto">Mostrar</button>
+                                    <button type="button" class="small-btn ghost" id="btnDownloadTexto">Descarregar</button>
                                 </div>
                             </div>
                             <div id="panel-texto" style="display:none;">
@@ -340,8 +340,8 @@
                             <div class="panel-header">
                                 <strong>Visualização Mermaid</strong>
                                 <div>
-                                    <button class="small-btn" id="btnToggleMermaid">Mostrar</button>
-                                    <button class="small-btn ghost" id="btnDownloadMermaid">Descarregar</button>
+                                    <button type="button" class="small-btn" id="btnToggleMermaid">Mostrar</button>
+                                    <button type="button" class="small-btn ghost" id="btnDownloadMermaid">Descarregar</button>
                                 </div>
                             </div>
                             <div id="panel-mermaid" style="display:none;">
@@ -367,8 +367,8 @@
                             <div class="panel-header">
                                 <strong>Parser</strong>
                                 <div>
-                                    <button class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
-                                    <button class="small-btn ghost" id="btnCopyParser">Copiar</button>
+                                    <button type="button" class="small-btn ghost" id="btnDownloadParser">Descarregar</button>
+                                    <button type="button" class="small-btn ghost" id="btnCopyParser">Copiar</button>
                                         {% if resultado and resultado.ontology_filename %}
                                             <a class="small-btn ghost" id="btnDownloadOntology" href="/download_generated/{{ resultado.ontology_filename }}">Ontologia (.ttl)</a>
                                         {% endif %}
@@ -383,8 +383,8 @@
                             <div class="panel-header">
                                 <strong>Visitor </strong>
                                 <div>
-                                    <button class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
-                                    <button class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
+                                    <button type="button" class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
+                                    <button type="button" class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
                                 </div>
                             </div>
                             <div>
@@ -651,7 +651,29 @@
             } catch(e) {
                 console.warn('Highlight.js init failed', e);
             }
+            
+            // Gravar e restaurar o scroll (evitar a sensação de "salto" no refresh do Analisar)
+            const scrollPosEsq = sessionStorage.getItem('scrollEsq');
+            const scrollPosDir = sessionStorage.getItem('scrollDir');
+            
+            if (scrollPosEsq && document.querySelector('.panel-left')) {
+                document.querySelector('.panel-left').scrollTop = scrollPosEsq;
+            }
+            if (scrollPosDir && document.querySelector('.panel-right')) {
+                document.querySelector('.panel-right').scrollTop = scrollPosDir;
+            }
         });
+        
+        // Guardar o scroll atual pouco antes de despoletar a submissão
+        const targetMainForm = document.getElementById('mainForm');
+        if (targetMainForm) {
+            targetMainForm.addEventListener('submit', function() {
+                const pL = document.querySelector('.panel-left');
+                const pR = document.querySelector('.panel-right');
+                if (pL) sessionStorage.setItem('scrollEsq', pL.scrollTop);
+                if (pR) sessionStorage.setItem('scrollDir', pR.scrollTop);
+            });
+        }
     </script>
 </body>
 </html>

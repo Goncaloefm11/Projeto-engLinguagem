@@ -322,7 +322,7 @@ def diagnose_parse_error(tokens_lista, gramatica, tabela, erro_msg):
     if m_esp:
         info_erro['stack_esperado'] = [e.strip() for e in m_esp.group(1).split(', ') if e.strip()]
     else:
-        m_esp2 = re.search(r"esperado\s*'([^']+)'", erro_msg)
+        m_esp2 = re.search(r"\besperado\s*'([^']+)'", erro_msg)
         if m_esp2:
             info_erro['stack_esperado'] = [m_esp2.group(1)]
             
@@ -808,7 +808,7 @@ def corrigir_frase_com_diagnostico(tokens_lista, erro_parse, gramatica, tabela):
             else:
                 esperados = [e.strip() for e in bruto.split(',')]
         else:
-            m_esp2 = re.search(r"esperado\s*'([^']+)'", erro_p)
+            m_esp2 = re.search(r"\besperado\s*'([^']+)'", erro_p)
             if m_esp2: esperados = [m_esp2.group(1)]
             
         token_falha = ''
@@ -823,12 +823,16 @@ def corrigir_frase_com_diagnostico(tokens_lista, erro_parse, gramatica, tabela):
 
         if "extra após parsing" in erro_p:
             # Remove o token a mais (do fim para o início)
-            if token_falha in t_atuais_val:
-                for i in reversed(range(len(t_atuais_val))):
-                    if t_atuais_val[i] == token_falha:
-                        t_atuais_val.pop(i)
-                        break
-                nova_frase = " ".join(t_atuais_val)
+            for i in reversed(range(len(tokens_atuais))):
+                if tokens_atuais[i]['value'] == token_falha or tokens_atuais[i].get('type') == token_falha:
+                    val_remover = tokens_atuais[i]['value']
+                    # Remover pelo valor correspondente
+                    for j in reversed(range(len(t_atuais_val))):
+                        if t_atuais_val[j] == val_remover:
+                            t_atuais_val.pop(j)
+                            break
+                    nova_frase = " ".join(t_atuais_val)
+                    break
                 
         elif uteis:
             # Ordena pela nossa tabela de prioridades e insere
@@ -840,11 +844,17 @@ def corrigir_frase_com_diagnostico(tokens_lista, erro_parse, gramatica, tabela):
                     t_atuais_val.append(token_escolhido)
                 else:
                     inserido = False
-                    for i in range(len(t_atuais_val)):
-                        if t_atuais_val[i] == token_falha:
-                            t_atuais_val.insert(i, token_escolhido)
-                            inserido = True
-                            break
+                    for i in range(len(tokens_atuais)):
+                        if tokens_atuais[i]['value'] == token_falha or tokens_atuais[i].get('type') == token_falha:
+                            # Inserir antes desse token
+                            val_alvo = tokens_atuais[i]['value']
+                            for j in range(len(t_atuais_val)):
+                                if t_atuais_val[j] == val_alvo:
+                                    t_atuais_val.insert(j, token_escolhido)
+                                    inserido = True
+                                    break
+                            if inserido:
+                                break
                     if not inserido:
                         t_atuais_val.append(token_escolhido)
                         
