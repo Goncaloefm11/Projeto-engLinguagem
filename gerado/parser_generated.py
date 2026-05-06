@@ -1,7 +1,7 @@
 import sys
 import json
 # Parser Gerado - Projeto 2026
-gramatica = {'terminais': ['[', 'ε', '[0-9]+', ']', '[^<>]+', ','], 'nao_terminais': ['string', 'Elems', 'Cont', 'Resto', 'int', 'Elem', 'Lista'], 'producoes': {'Lista': [['[', 'Cont']], 'Cont': [[']'], ['Elems', ']']], 'Elems': [['Elem', 'Resto']], 'Resto': [['ε'], [',', 'Elem', 'Resto']], 'Elem': [['int'], ['string']], 'int': [['[0-9]+']], 'string': [['[^<>]+']]}, 'inicial': 'Lista', 'literais': {',', ']', '['}}
+gramatica = {'terminais': ['ε', '[0-9]+', '[', ']', ',', '[^<>]+'], 'nao_terminais': ['Cont', 'Resto', 'Elem', 'int', 'string', 'Elems', 'Lista'], 'producoes': {'Lista': [['[', 'Cont']], 'Cont': [[']'], ['Elems', ']']], 'Elems': [['Elem', 'Resto']], 'Resto': [['ε'], [',', 'Elem', 'Resto']], 'Elem': [['int'], ['string']], 'int': [['[0-9]+']], 'string': [['[^<>]+']]}, 'inicial': 'Lista', 'literais': {'[', ',', ']'}}
 prox_simb = None
 
 def parser_error(simb):
@@ -18,36 +18,6 @@ def rec_term(esperado):
         prox_simb = ('erro', '', 0, 0)
         return None
 # --------------------------------------------------------
-
-def rec_string():
-    global prox_simb
-    no_atual = {'name': 'string', 'children': []}
-    if prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_term('[^<>]+')
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Elems():
-    global prox_simb
-    no_atual = {'name': 'Elems', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Elem()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Resto()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_Elem()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Resto()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
 
 def rec_Cont():
     global prox_simb
@@ -90,6 +60,21 @@ def rec_Resto():
         parser_error(prox_simb)
         return None
 
+def rec_Elem():
+    global prox_simb
+    no_atual = {'name': 'Elem', 'children': []}
+    if prox_simb and prox_simb['type'] == '[0-9]+':
+        filho_0 = rec_int()
+        if filho_0: no_atual['children'].append(filho_0)
+        return no_atual
+    elif prox_simb and prox_simb['type'] == '[^<>]+':
+        filho_0 = rec_string()
+        if filho_0: no_atual['children'].append(filho_0)
+        return no_atual
+    else:
+        parser_error(prox_simb)
+        return None
+
 def rec_int():
     global prox_simb
     no_atual = {'name': 'int', 'children': []}
@@ -101,16 +86,31 @@ def rec_int():
         parser_error(prox_simb)
         return None
 
-def rec_Elem():
+def rec_string():
     global prox_simb
-    no_atual = {'name': 'Elem', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_int()
+    no_atual = {'name': 'string', 'children': []}
+    if prox_simb and prox_simb['type'] == '[^<>]+':
+        filho_0 = rec_term('[^<>]+')
         if filho_0: no_atual['children'].append(filho_0)
         return no_atual
-    elif prox_simb and prox_simb['type'] == '[^<>]+':
-        filho_0 = rec_string()
+    else:
+        parser_error(prox_simb)
+        return None
+
+def rec_Elems():
+    global prox_simb
+    no_atual = {'name': 'Elems', 'children': []}
+    if prox_simb and prox_simb['type'] == '[0-9]+':
+        filho_0 = rec_Elem()
         if filho_0: no_atual['children'].append(filho_0)
+        filho_1 = rec_Resto()
+        if filho_1: no_atual['children'].append(filho_1)
+        return no_atual
+    elif prox_simb and prox_simb['type'] == '[^<>]+':
+        filho_0 = rec_Elem()
+        if filho_0: no_atual['children'].append(filho_0)
+        filho_1 = rec_Resto()
+        if filho_1: no_atual['children'].append(filho_1)
         return no_atual
     else:
         parser_error(prox_simb)

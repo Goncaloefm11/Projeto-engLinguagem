@@ -43,45 +43,25 @@ class TreeVisitor:
                 res.append(self._convert_leaf(c))
         return {name: res}
 
-def visit_Cont(self, node):
-    """Visita o não-terminal Cont"""
+def visit_Value(self, node):
+    """Visita o não-terminal Value"""
     results = []
     for c in node.get('children', []):
         if isinstance(c, dict):
             results.append(self.visit(c))
         else:
             results.append(self._convert_leaf(c))
-    return {"Cont": results}
+    return {"Value": results}
 
-def visit_Resto(self, node):
-    """Visita o não-terminal Resto"""
+def visit_number(self, node):
+    """Visita o não-terminal number"""
     results = []
     for c in node.get('children', []):
         if isinstance(c, dict):
             results.append(self.visit(c))
         else:
             results.append(self._convert_leaf(c))
-    return {"Resto": results}
-
-def visit_Elem(self, node):
-    """Visita o não-terminal Elem"""
-    results = []
-    for c in node.get('children', []):
-        if isinstance(c, dict):
-            results.append(self.visit(c))
-        else:
-            results.append(self._convert_leaf(c))
-    return {"Elem": results}
-
-def visit_int(self, node):
-    """Visita o não-terminal int"""
-    results = []
-    for c in node.get('children', []):
-        if isinstance(c, dict):
-            results.append(self.visit(c))
-        else:
-            results.append(self._convert_leaf(c))
-    return {"int": results}
+    return {"number": results}
 
 def visit_string(self, node):
     """Visita o não-terminal string"""
@@ -93,25 +73,85 @@ def visit_string(self, node):
             results.append(self._convert_leaf(c))
     return {"string": results}
 
-def visit_Elems(self, node):
-    """Visita o não-terminal Elems"""
+def visit_Elements(self, node):
+    """Visita o não-terminal Elements"""
     results = []
     for c in node.get('children', []):
         if isinstance(c, dict):
             results.append(self.visit(c))
         else:
             results.append(self._convert_leaf(c))
-    return {"Elems": results}
+    return {"Elements": results}
 
-def visit_Lista(self, node):
-    """Visita o não-terminal Lista"""
+def visit_Members(self, node):
+    """Visita o não-terminal Members"""
     results = []
     for c in node.get('children', []):
         if isinstance(c, dict):
             results.append(self.visit(c))
         else:
             results.append(self._convert_leaf(c))
-    return {"Lista": results}
+    return {"Members": results}
+
+def visit_Array(self, node):
+    """Visita o não-terminal Array"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"Array": results}
+
+def visit_Elements_Tail(self, node):
+    """Visita o não-terminal Elements_Tail"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"Elements_Tail": results}
+
+def visit_Pair(self, node):
+    """Visita o não-terminal Pair"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"Pair": results}
+
+def visit_JSON(self, node):
+    """Visita o não-terminal JSON"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"JSON": results}
+
+def visit_Object(self, node):
+    """Visita o não-terminal Object"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"Object": results}
+
+def visit_Members_Tail(self, node):
+    """Visita o não-terminal Members_Tail"""
+    results = []
+    for c in node.get('children', []):
+        if isinstance(c, dict):
+            results.append(self.visit(c))
+        else:
+            results.append(self._convert_leaf(c))
+    return {"Members_Tail": results}
 
 if __name__ == '__main__':
     print('Este ficheiro define TreeVisitor. Importa-o em parser_generated.py e usa-o para processar a árvore.')

@@ -390,7 +390,10 @@
 
                     <div style="margin-bottom: 15px;">
                         <label style="display: block; margin-bottom: 8px;"><strong>Visitor Editável:</strong></label>
-                        <textarea id="visitor-code-textarea" class="code-block" style="height: 350px; width: 100%; box-sizing: border-box;">{{ codigo_visitor }}</textarea>
+                        <div style="position: relative; height: 350px; border: 1px solid #ddd; border-radius: 4px; background: #fff; text-align: left;">
+                            <pre style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; overflow: hidden; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; pointer-events: none;"><code id="visitor-code-highlight" class="language-python" style="background: transparent; padding: 0; margin: 0; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre; border: none;">{{ codigo_visitor }}</code></pre>
+                            <textarea id="visitor-code-textarea" spellcheck="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; color: transparent; background: transparent; caret-color: #000; border: none; resize: none; overflow: auto; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre;" oninput="updateVisitorHighlight(this.value)" onscroll="document.getElementById('visitor-code-highlight').parentElement.scrollTop = this.scrollTop; document.getElementById('visitor-code-highlight').parentElement.scrollLeft = this.scrollLeft;">{{ codigo_visitor }}</textarea>
+                        </div>
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
@@ -727,6 +730,7 @@ WHERE {
                     const visitorName = this.value;
                     if (!visitorName) {
                         visitorCodeTextarea.value = '';
+                        if (typeof updateVisitorHighlight === 'function') updateVisitorHighlight('');
                         return;
                     }
 
@@ -735,6 +739,7 @@ WHERE {
                         if (response.ok) {
                             const code = await response.text();
                             visitorCodeTextarea.value = code;
+                            if (typeof updateVisitorHighlight === 'function') updateVisitorHighlight(code);
                             showToast(`Visitor '${visitorName}' carregado!`);
                         } else {
                             showToast('Erro ao carregar visitor!');
@@ -795,6 +800,7 @@ WHERE {
                         visitorSelect.dispatchEvent(new Event('change'));
                     } else {
                         visitorCodeTextarea.value = '';
+                        if (typeof updateVisitorHighlight === 'function') updateVisitorHighlight('');
                         showToast('Visitor recarregado!');
                     }
                 });
@@ -1057,13 +1063,27 @@ LIMIT 50`
                             // Formatar resultados em tabela
                             if (data.results && data.results.length > 0) {
                                 if (data.variables && data.variables.length > 0) {
-                                    // Tabela formatada
-                                    let table = 'Variáveis: ' + data.variables.join(', ') + '\n\n';
-                                    table += data.results.map(row => {
-                                        return Object.entries(row)
-                                            .map(([k, v]) => `${k}: ${v}`)
-                                            .join(' | ');
-                                    }).join('\n');
+                                    // Tabela formatada (formato visual em ASCII grid)
+                                    const colWidths = {};
+                                    data.variables.forEach(v => { colWidths[v] = v.length; });
+                                    data.results.forEach(row => {
+                                        data.variables.forEach(v => {
+                                            const valStr = row[v] !== undefined && row[v] !== null ? String(row[v]) : '';
+                                            if (valStr.length > colWidths[v]) { colWidths[v] = valStr.length; }
+                                        });
+                                    });
+                                    let table = '';
+                                    const sepLine = '+' + data.variables.map(v => '-'.repeat(colWidths[v] + 2)).join('+') + '+\n';
+                                    table += sepLine;
+                                    table += '|' + data.variables.map(v => ' ' + v.padEnd(colWidths[v]) + ' ').join('|') + '|\n';
+                                    table += sepLine;
+                                    data.results.forEach(row => {
+                                        table += '|' + data.variables.map(v => {
+                                            const valStr = row[v] !== undefined && row[v] !== null ? String(row[v]) : '';
+                                            return ' ' + valStr.padEnd(colWidths[v]) + ' ';
+                                        }).join('|') + '|\n';
+                                    });
+                                    table += sepLine;
                                     resultsDiv.textContent = table;
                                 } else {
                                     // Resultados simples
@@ -1172,6 +1192,11 @@ LIMIT 50`
                 // Highlight all code blocks (parser and visitor) with language-python
                 var codes = document.querySelectorAll('code.language-python');
                 codes.forEach(function(el){ if (window.hljs) window.hljs.highlightElement(el); });
+
+                if (typeof updateVisitorHighlight === 'function') {
+                    const ta = document.getElementById('visitor-code-textarea');
+                    if (ta) updateVisitorHighlight(ta.value);
+                }
             } catch(e) {
                 console.warn('Highlight.js init failed', e);
             }
@@ -1225,6 +1250,27 @@ LIMIT 50`
                 if (pR) sessionStorage.setItem('scrollDir', pR.scrollTop);
             });
         }
+
+        const reloadExSelect = document.getElementById('exemploSelect');
+        if (reloadExSelect) {
+            reloadExSelect.addEventListener('change', function() {
+                if (typeof loadVisitorsList === 'function') {
+                    loadVisitorsList();
+                }
+            });
+        }
+
+        function updateVisitorHighlight(code) {
+                const highlightBlock = document.getElementById('visitor-code-highlight');
+                if (highlightBlock) {
+                    highlightBlock.textContent = code;
+                    if (window.hljs) {
+                        highlightBlock.removeAttribute('data-highlighted');
+                        window.hljs.highlightElement(highlightBlock);
+                    }
+                }
+            }
+
     </script>
 </body>
 </html>
