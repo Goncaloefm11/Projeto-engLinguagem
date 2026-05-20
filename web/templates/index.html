@@ -388,20 +388,21 @@
                         </select>
                     </div>
 
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px;"><strong>Visitor Editável:</strong></label>
+                    <div class="panel" style="margin-bottom: 15px;">
+                        <div class="panel-header">
+                            <strong>Código do Visitor Editável</strong>
+                            <div>
+                                <button type="button" class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
+                                <button type="button" class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
+                            </div>
+                        </div>
                         <div style="position: relative; height: 350px; border: 1px solid #ddd; border-radius: 4px; background: #fff; text-align: left;">
                             <pre style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; overflow: hidden; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; pointer-events: none;"><code id="visitor-code-highlight" class="language-python" style="background: transparent; padding: 0; margin: 0; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre; border: none;">{{ codigo_visitor }}</code></pre>
                             <textarea id="visitor-code-textarea" spellcheck="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; color: transparent; background: transparent; caret-color: #000; border: none; resize: none; overflow: auto; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre;" oninput="updateVisitorHighlight(this.value)" onscroll="document.getElementById('visitor-code-highlight').parentElement.scrollTop = this.scrollTop; document.getElementById('visitor-code-highlight').parentElement.scrollLeft = this.scrollLeft;">{{ codigo_visitor }}</textarea>
                         </div>
                     </div>
 
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button type="button" id="btnSaveVisitor" class="btn btn-success" style="background-color: #27ae60; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Guardar Visitor</button>
-                        <button type="button" id="btnReloadVisitor" class="btn btn-secondary" style="background-color: #95a5a6; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Recarregar</button>
-                        <button type="button" class="small-btn ghost" id="btnDownloadVisitor" style="padding: 10px 16px;">Descarregar</button>
-                        <button type="button" class="small-btn ghost" id="btnCopyVisitor" style="padding: 10px 16px;">Copiar</button>
-                    </div>
+
 
                     <div style="background-color: #f0f8ff; border-left: 4px solid #3498db; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
                         <h5 style="margin-top: 0; margin-bottom: 10px;">Testar Visitor</h5>
