@@ -998,10 +998,7 @@ def serve_gerado(filename):
         if not os.path.abspath(requested_path).startswith(os.path.abspath(gerado_dir)):
             return {'error': 'Acesso negado.'}, 403
         
-        if os.path.exists(requested_path):
-            return send_from_directory(gerado_dir, filename)
-        else:
-            return {'error': 'Ficheiro não encontrado.'}, 404
+        return send_from_directory(gerado_dir, filename)
     except Exception as e:
         return {'error': str(e)}, 500
 

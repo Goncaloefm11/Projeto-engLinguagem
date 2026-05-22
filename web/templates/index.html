@@ -91,6 +91,12 @@
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
         .toast.removing { animation: slideOut 0.3s ease-in; }
+
+        /* Estilos do Modal do Protégé */
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 60%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover, .close-modal:focus { color: black; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -144,47 +150,9 @@
                     <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
                 </div>
 
-                <button type="submit" style="width: 100%;">Analisar</button>
-            </form>
-        </div>
-
-        <div class="panel-right">
-
-        {% if resultado %}
-
-            {% if resultado.erro_frase %}
-                <div class="alert alert-danger mt-3">
-                    <strong>Erro de Parsing:</strong> {{ resultado.erro_frase }}
-                </div>
-
-                {% if resultado.is_correcao %}
-                <div class="mt-2">
-                    <p class="mb-1 text-success"><strong>Preview da Frase Corrigida:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
-                    <button type="button" class="btn btn-warning" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
-                        Corrigir Frase
-                    </button>
-                </div>
-                {% else %}
-                <div class="mt-2">
-                    <p class="mb-1"><strong>Exemplo Simples:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
-                        Usar Frase Simples
-                    </button>
-                </div>
-                {% endif %}
-            {% endif %}
-
-            {% if resultado.erro %}
-                <div class="section">
-                    <div class="error-box">
-                        <strong>Erro detetado:</strong> {{ resultado.erro }}
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if resultado.gramatica %}
-                <div class="section">
-                    <h3>Relatório de Conflitos LL(1)</h3>
+                {% if resultado and resultado.gramatica %}
+                <div class="section" style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+                    <h3 style="margin-top: 0;">Relatório de Conflitos LL(1)</h3>
                     {% if resultado.conflitos %}
                         <ul class="conflito-list">
                             {% for c in resultado.conflitos %} <li>{{ c }}</li> {% endfor %}
@@ -244,6 +212,47 @@
                         <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
                     {% endif %}
                 </div>
+                {% endif %}
+
+                <button type="submit" style="width: 100%; margin-top: 20px;">Analisar</button>
+            </form>
+        </div>
+
+        <div class="panel-right">
+
+        {% if resultado %}
+
+            {% if resultado.erro_frase %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Erro de Parsing:</strong> {{ resultado.erro_frase }}
+                </div>
+
+                {% if resultado.is_correcao %}
+                <div class="mt-2">
+                    <p class="mb-1 text-success"><strong>Preview da Frase Corrigida:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-warning" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Corrigir Frase
+                    </button>
+                </div>
+                {% else %}
+                <div class="mt-2">
+                    <p class="mb-1"><strong>Exemplo Simples:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Usar Frase Simples
+                    </button>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {% if resultado.erro %}
+                <div class="section">
+                    <div class="error-box">
+                        <strong>Erro detetado:</strong> {{ resultado.erro }}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if resultado.gramatica %}
                 
                 <div class="section">
                     <h3>Conjuntos First e Follow</h3>
@@ -426,6 +435,7 @@
                         <div>
                             <button type="button" class="small-btn ghost" id="btnDownloadOntology">Descarregar</button>
                             <button type="button" class="small-btn ghost" id="btnCopyOntology">Copiar</button>
+                            <button type="button" class="small-btn" id="btnOpenProtege" style="background-color: #8e44ad;">Abrir no Protégé</button>
                         </div>
                     </div>
                     
@@ -481,6 +491,32 @@
         {% endif %}
         </div>
         </div>
+
+        <div id="protege-modal" class="modal" style="display:none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+            <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 60%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                <span class="close-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <h3 style="margin-top: 0; color: #2c3e50;">Como usar o Protégé com a sua Ontologia</h3>
+                <p>Para visualizar e editar o ficheiro <code>grammar.ttl</code>, precisa da aplicação Protégé. Siga estes passos:</p>
+                
+                <h4>1. Descarregar e Instalar o Protégé</h4>
+                <ul>
+                    <li>Aceda ao site oficial do Protégé: <a href="https://protege.stanford.edu/" target="_blank">https://protege.stanford.edu/</a></li>
+                    <li>Descarregue a versão mais recente para o seu sistema operativo (macOS, Windows ou Linux).</li>
+                    <li>Siga as instruções de instalação.</li>
+                </ul>
+
+                <h4>2. Abrir o Ficheiro da Ontologia</h4>
+                <p>O ficheiro da sua ontologia, <strong><code>grammar.ttl</code></strong>, foi guardado na pasta <strong><code>gerado/</code></strong> dentro do seu projeto.</p>
+                <ul>
+                    <li>Abra a aplicação Protégé.</li>
+                    <li>No menu, vá a <strong>File &gt; Open...</strong></li>
+                    <li>Navegue até à pasta do seu projeto e entre na pasta <code>gerado</code>.</li>
+                    <li>Selecione o ficheiro <code>grammar.ttl</code> e clique em "Open".</li>
+                </ul>
+                <p>Agora poderá explorar a estrutura da sua gramática como uma ontologia, visualizar as relações e executar queries SPARQL diretamente no Protégé.</p>
+            </div>
+        </div>
+
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
         mermaid.initialize({ startOnLoad: false, theme: 'default' });
@@ -841,6 +877,25 @@
                 });
             }
 
+            const btnOpenProtege = document.getElementById('btnOpenProtege');
+            const protegeModal = document.getElementById('protege-modal');
+            const closeModal = document.querySelector('.close-modal');
+
+            if (btnOpenProtege && protegeModal && closeModal) {
+                btnOpenProtege.addEventListener('click', function() {
+                    protegeModal.style.display = 'block';
+                });
+                closeModal.addEventListener('click', function() {
+                    protegeModal.style.display = 'none';
+                });
+                window.addEventListener('click', function(event) {
+                    if (event.target == protegeModal) {
+                        protegeModal.style.display = 'none';
+                    }
+                });
+            }
+
+
             // ==================== SPARQL HANDLERS ====================
             const sparqlExamples = {
                 'all-terminals': `PREFIX ex: <http://example.org/grammar#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?terminal ?label\nWHERE {\n  ?terminal a ex:Terminal ;\n           rdfs:label ?label .\n}\nORDER BY ?label`,
@@ -958,6 +1013,26 @@
                     element.click();
                     document.body.removeChild(element);
                     showToast('sparql_results.json descarregado!');
+                });
+            }
+
+            const closeModalBtns = document.querySelectorAll('.close-modal');
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = btn.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+            const btnOpenModal = document.getElementById('btnOpenProtege');
+            if (btnOpenModal) {
+                btnOpenModal.addEventListener('click', function() {
+                    const modal = document.getElementById('protege-modal');
+                    if (modal) {
+                        modal.style.display = 'block';
+                    }
                 });
             }
         });

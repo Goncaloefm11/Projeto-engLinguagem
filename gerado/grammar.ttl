@@ -2,8 +2,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-ex:Conflict_1 a ex:Conflict ;
-    rdfs:comment "Conflito FIRST/FOLLOW em Lista com terminal '('" .
+ex:Conflict a owl:Class .
 
 ex:Sexp a ex:Grammar ;
     rdfs:label "Grammar" ;
@@ -11,18 +10,17 @@ ex:Sexp a ex:Grammar ;
         ex:NT_Funcao,
         ex:NT_INT,
         ex:NT_Lista,
+        ex:NT_Lista_P,
         ex:NT_Sexp ;
     ex:hasProduction ex:Exp_prod_0,
         ex:Exp_prod_1,
         ex:Funcao_prod_0,
         ex:Funcao_prod_1,
         ex:INT_prod_0,
+        ex:Lista_P_prod_0,
+        ex:Lista_P_prod_1,
         ex:Lista_prod_0,
-        ex:Lista_prod_1,
         ex:Sexp_prod_0 .
-
-ex:Conflict_0 a ex:Conflict ;
-    rdfs:comment "Conflito FIRST/FOLLOW em Lista com terminal '[0-9]+'" .
 
 ex:Exp_prod_0 a ex:Production ;
     rdfs:label "INT" ;
@@ -53,18 +51,22 @@ ex:Grammar a owl:Class .
 ex:INT_prod_0 a ex:Production ;
     rdfs:label "[0-9]+" ;
     ex:hasRHSTerminal ex:T_square_open0minus9square_closeplus ;
-    ex:inConflict ex:Conflict_0 ;
     ex:lhs ex:NT_INT .
 
-ex:Lista_prod_0 a ex:Production ;
-    rdfs:label "Lista Exp" ;
+ex:Lista_P_prod_0 a ex:Production ;
+    rdfs:label "Exp Lista_P" ;
     ex:hasRHSNonTerminal ex:NT_Exp,
-        ex:NT_Lista ;
-    ex:lhs ex:NT_Lista .
+        ex:NT_Lista_P ;
+    ex:lhs ex:NT_Lista_P .
 
-ex:Lista_prod_1 a ex:Production ;
+ex:Lista_P_prod_1 a ex:Production ;
     rdfs:label "ε" ;
     ex:hasRHSTerminal ex:T_epsilon ;
+    ex:lhs ex:NT_Lista_P .
+
+ex:Lista_prod_0 a ex:Production ;
+    rdfs:label "Lista_P" ;
+    ex:hasRHSNonTerminal ex:NT_Lista_P ;
     ex:lhs ex:NT_Lista .
 
 ex:Sexp_prod_0 a ex:Production ;
@@ -94,8 +96,6 @@ ex:T_square_open0minus9square_closeplus a ex:Terminal ;
 ex:T_star a ex:Terminal ;
     rdfs:label "*" .
 
-ex:Conflict a owl:Class .
-
 ex:NT_Sexp a ex:NonTerminal ;
     rdfs:label "Sexp" ;
     ex:firstSet "(,[0-9]+" ;
@@ -111,17 +111,22 @@ ex:NT_Funcao a ex:NonTerminal ;
     ex:firstSet "*,+" ;
     ex:followSet ")" .
 
+ex:NT_Lista a ex:NonTerminal ;
+    rdfs:label "Lista" ;
+    ex:firstSet "(,[0-9]+,ε" ;
+    ex:followSet ")" .
+
 ex:NT_Exp a ex:NonTerminal ;
     rdfs:label "Exp" ;
     ex:firstSet "(,[0-9]+" ;
     ex:followSet "(,),.,[0-9]+" .
 
-ex:NonTerminal a owl:Class .
-
-ex:NT_Lista a ex:NonTerminal ;
-    rdfs:label "Lista" ;
+ex:NT_Lista_P a ex:NonTerminal ;
+    rdfs:label "Lista_P" ;
     ex:firstSet "(,[0-9]+,ε" ;
-    ex:followSet "(,),[0-9]+" .
+    ex:followSet ")" .
+
+ex:NonTerminal a owl:Class .
 
 ex:Terminal a owl:Class .
 
