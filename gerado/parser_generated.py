@@ -1,7 +1,7 @@
 import sys
 import json
 # Parser Gerado - Projeto 2026
-gramatica = {'terminais': ['(', '.', ')', 'ε', '*', '+', '[0-9]+'], 'nao_terminais': ['Exp', 'INT', 'Funcao', 'Lista', 'Sexp', 'Lista_P'], 'producoes': {'Sexp': [['Exp', '.']], 'Exp': [['INT'], ['(', 'Funcao', ')']], 'INT': [['[0-9]+']], 'Funcao': [['+', 'Lista'], ['*', 'Lista']], 'Lista': [['Lista_P']], 'Lista_P': [['Exp', 'Lista_P'], ['ε']]}, 'inicial': 'Sexp', 'literais': set()}
+gramatica = {'terminais': ['2', 'ε', 'A', '1'], 'nao_terminais': ['S', 'S_F'], 'producoes': {'S': [['A', 'S_F']], 'S_F': [['1'], ['2']]}, 'inicial': 'S', 'literais': set()}
 prox_simb = None
 
 def parser_error(simb):
@@ -19,110 +19,29 @@ def rec_term(esperado):
         return None
 # --------------------------------------------------------
 
-def rec_Exp():
+def rec_S():
     global prox_simb
-    no_atual = {'name': 'Exp', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_INT()
+    no_atual = {'name': 'S', 'children': []}
+    if prox_simb and prox_simb['type'] == 'A':
+        filho_0 = rec_term('A')
         if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '(':
-        filho_0 = rec_term('(')
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Funcao()
-        if filho_1: no_atual['children'].append(filho_1)
-        filho_2 = rec_term(')')
-        if filho_2: no_atual['children'].append(filho_2)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_INT():
-    global prox_simb
-    no_atual = {'name': 'INT', 'children': []}
-    if prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_term('[0-9]+')
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Funcao():
-    global prox_simb
-    no_atual = {'name': 'Funcao', 'children': []}
-    if prox_simb and prox_simb['type'] == '+':
-        filho_0 = rec_term('+')
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Lista()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '*':
-        filho_0 = rec_term('*')
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Lista()
+        filho_1 = rec_S_F()
         if filho_1: no_atual['children'].append(filho_1)
         return no_atual
     else:
         parser_error(prox_simb)
         return None
 
-def rec_Lista():
+def rec_S_F():
     global prox_simb
-    no_atual = {'name': 'Lista', 'children': []}
-    if prox_simb and prox_simb['type'] == '(':
-        filho_0 = rec_Lista_P()
+    no_atual = {'name': 'S_F', 'children': []}
+    if prox_simb and prox_simb['type'] == '1':
+        filho_0 = rec_term('1')
         if filho_0: no_atual['children'].append(filho_0)
         return no_atual
-    elif prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Lista_P()
+    elif prox_simb and prox_simb['type'] == '2':
+        filho_0 = rec_term('2')
         if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == ')':
-        filho_0 = rec_Lista_P()
-        if filho_0: no_atual['children'].append(filho_0)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Sexp():
-    global prox_simb
-    no_atual = {'name': 'Sexp', 'children': []}
-    if prox_simb and prox_simb['type'] == '(':
-        filho_0 = rec_Exp()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_term('.')
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Exp()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_term('.')
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    else:
-        parser_error(prox_simb)
-        return None
-
-def rec_Lista_P():
-    global prox_simb
-    no_atual = {'name': 'Lista_P', 'children': []}
-    if prox_simb and prox_simb['type'] == '(':
-        filho_0 = rec_Exp()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Lista_P()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == '[0-9]+':
-        filho_0 = rec_Exp()
-        if filho_0: no_atual['children'].append(filho_0)
-        filho_1 = rec_Lista_P()
-        if filho_1: no_atual['children'].append(filho_1)
-        return no_atual
-    elif prox_simb and prox_simb['type'] == ')':
-        no_atual['children'].append({'name': 'ε'})
         return no_atual
     else:
         parser_error(prox_simb)
@@ -207,7 +126,7 @@ if __name__ == '__main__':
 
     lexer = _SimpleLexer(tokens)
     prox_simb = lexer.token()
-    start_fn = globals().get("rec_Sexp")
+    start_fn = globals().get("rec_S")
     if not start_fn:
         print('Função inicial rec_' + str(gramatica.get('inicial')) + ' não encontrada.')
         sys.exit(1)

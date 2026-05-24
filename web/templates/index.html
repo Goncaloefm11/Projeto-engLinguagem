@@ -313,7 +313,7 @@
                             <tr>
                                 <td><strong>{{ nt }}</strong></td>
                                 {% for t in resultado.gramatica.terminais %}
-                                    <td><td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td></td>
+                                    <td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td>
                                 {% endfor %}
                                 <td>{{ ' '.join(derivacoes.get('$', ['-'])) }}</td>
                             </tr>
