@@ -4,131 +4,57 @@
 
 ex:Conflict a owl:Class .
 
-ex:Sexp a ex:Grammar ;
+ex:S a ex:Grammar ;
     rdfs:label "Grammar" ;
-    ex:hasNonTerminal ex:NT_Exp,
-        ex:NT_Funcao,
-        ex:NT_INT,
-        ex:NT_Lista,
-        ex:NT_Lista_P,
-        ex:NT_Sexp ;
-    ex:hasProduction ex:Exp_prod_0,
-        ex:Exp_prod_1,
-        ex:Funcao_prod_0,
-        ex:Funcao_prod_1,
-        ex:INT_prod_0,
-        ex:Lista_P_prod_0,
-        ex:Lista_P_prod_1,
-        ex:Lista_prod_0,
-        ex:Sexp_prod_0 .
-
-ex:Exp_prod_0 a ex:Production ;
-    rdfs:label "INT" ;
-    ex:hasRHSNonTerminal ex:NT_INT ;
-    ex:lhs ex:NT_Exp .
-
-ex:Exp_prod_1 a ex:Production ;
-    rdfs:label "( Funcao )" ;
-    ex:hasRHSNonTerminal ex:NT_Funcao ;
-    ex:hasRHSTerminal ex:T_bracket_close,
-        ex:T_bracket_open ;
-    ex:lhs ex:NT_Exp .
-
-ex:Funcao_prod_0 a ex:Production ;
-    rdfs:label "+ Lista" ;
-    ex:hasRHSNonTerminal ex:NT_Lista ;
-    ex:hasRHSTerminal ex:T_plus ;
-    ex:lhs ex:NT_Funcao .
-
-ex:Funcao_prod_1 a ex:Production ;
-    rdfs:label "* Lista" ;
-    ex:hasRHSNonTerminal ex:NT_Lista ;
-    ex:hasRHSTerminal ex:T_star ;
-    ex:lhs ex:NT_Funcao .
-
-ex:Grammar a owl:Class .
-
-ex:INT_prod_0 a ex:Production ;
-    rdfs:label "[0-9]+" ;
-    ex:hasRHSTerminal ex:T_square_open0minus9square_closeplus ;
-    ex:lhs ex:NT_INT .
-
-ex:Lista_P_prod_0 a ex:Production ;
-    rdfs:label "Exp Lista_P" ;
-    ex:hasRHSNonTerminal ex:NT_Exp,
-        ex:NT_Lista_P ;
-    ex:lhs ex:NT_Lista_P .
-
-ex:Lista_P_prod_1 a ex:Production ;
-    rdfs:label "ε" ;
-    ex:hasRHSTerminal ex:T_epsilon ;
-    ex:lhs ex:NT_Lista_P .
-
-ex:Lista_prod_0 a ex:Production ;
-    rdfs:label "Lista_P" ;
-    ex:hasRHSNonTerminal ex:NT_Lista_P ;
-    ex:lhs ex:NT_Lista .
-
-ex:Sexp_prod_0 a ex:Production ;
-    rdfs:label "Exp ." ;
-    ex:hasRHSNonTerminal ex:NT_Exp ;
-    ex:hasRHSTerminal ex:T_dot ;
-    ex:lhs ex:NT_Sexp .
-
-ex:T_bracket_close a ex:Terminal ;
-    rdfs:label ")" .
-
-ex:T_bracket_open a ex:Terminal ;
-    rdfs:label "(" .
-
-ex:T_dot a ex:Terminal ;
-    rdfs:label "." .
+    ex:hasNonTerminal ex:NT_S,
+        ex:NT_S_F ;
+    ex:hasProduction ex:S_F_prod_0,
+        ex:S_F_prod_1,
+        ex:S_prod_0 .
 
 ex:T_epsilon a ex:Terminal ;
     rdfs:label "ε" .
 
-ex:T_plus a ex:Terminal ;
-    rdfs:label "+" .
+ex:Grammar a owl:Class .
 
-ex:T_square_open0minus9square_closeplus a ex:Terminal ;
-    rdfs:label "[0-9]+" .
+ex:S_F_prod_0 a ex:Production ;
+    rdfs:label "1" ;
+    ex:hasRHSTerminal ex:T_1 ;
+    ex:lhs ex:NT_S_F .
 
-ex:T_star a ex:Terminal ;
-    rdfs:label "*" .
+ex:S_F_prod_1 a ex:Production ;
+    rdfs:label "2" ;
+    ex:hasRHSTerminal ex:T_2 ;
+    ex:lhs ex:NT_S_F .
 
-ex:NT_Sexp a ex:NonTerminal ;
-    rdfs:label "Sexp" ;
-    ex:firstSet "(,[0-9]+" ;
+ex:S_prod_0 a ex:Production ;
+    rdfs:label "A S_F" ;
+    ex:hasRHSNonTerminal ex:NT_S_F ;
+    ex:hasRHSTerminal ex:T_A ;
+    ex:lhs ex:NT_S .
+
+ex:T_1 a ex:Terminal ;
+    rdfs:label "1" .
+
+ex:T_2 a ex:Terminal ;
+    rdfs:label "2" .
+
+ex:T_A a ex:Terminal ;
+    rdfs:label "A" .
+
+ex:NT_S a ex:NonTerminal ;
+    rdfs:label "S" ;
+    ex:firstSet "A" ;
     ex:followSet "$" .
-
-ex:NT_INT a ex:NonTerminal ;
-    rdfs:label "INT" ;
-    ex:firstSet "[0-9]+" ;
-    ex:followSet "(,),.,[0-9]+" .
-
-ex:NT_Funcao a ex:NonTerminal ;
-    rdfs:label "Funcao" ;
-    ex:firstSet "*,+" ;
-    ex:followSet ")" .
-
-ex:NT_Lista a ex:NonTerminal ;
-    rdfs:label "Lista" ;
-    ex:firstSet "(,[0-9]+,ε" ;
-    ex:followSet ")" .
-
-ex:NT_Exp a ex:NonTerminal ;
-    rdfs:label "Exp" ;
-    ex:firstSet "(,[0-9]+" ;
-    ex:followSet "(,),.,[0-9]+" .
-
-ex:NT_Lista_P a ex:NonTerminal ;
-    rdfs:label "Lista_P" ;
-    ex:firstSet "(,[0-9]+,ε" ;
-    ex:followSet ")" .
 
 ex:NonTerminal a owl:Class .
 
-ex:Terminal a owl:Class .
-
 ex:Production a owl:Class .
+
+ex:NT_S_F a ex:NonTerminal ;
+    rdfs:label "S_F" ;
+    ex:firstSet "1,2" ;
+    ex:followSet "$" .
+
+ex:Terminal a owl:Class .
 
