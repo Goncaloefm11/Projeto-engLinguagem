@@ -56,7 +56,8 @@ grammar-playground/
 
 ### 2. Geração de Código e Compilação Dinâmica — `gerado/`
 
-- **Dual-Parsing Infrastructure** — valida e constrói a árvore sintática com tabela genérica em memória *ou* exporta um ficheiro Python puro com recursão descendente (`parser_generated.py`)
+- **Dual-Parsing Infrastructure** — Parser exportado `parser_generated.py`
+O sistema consegue pegar nessa mesma gramática e gerar um ficheiro `Python` autónomo com funções de recursão descendente — uma função por não-terminal. Esse ficheiro funciona sozinho, sem depender da app, e pode ser usado noutro projeto.
 - **Visitors Adaptativos** — gera o padrão Visitor mapeando cada não-terminal a uma função dedicada, facilitando tradução ou interpretação da árvore de derivação
 
 ### 3. Integração com a Web Semântica — `core/ontology.py`
