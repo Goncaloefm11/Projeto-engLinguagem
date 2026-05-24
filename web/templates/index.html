@@ -5,7 +5,7 @@
     <title>Grammar Playground - GP</title>
     <style>
         /* Estilos base */
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #333; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background-color: #ffffff; color: #333; }
         .header { background-color: #2c3e50; color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center; }
         .header h1 { margin: 0; font-size: 24px; }
         .header p { margin: 0; font-size: 14px; opacity: 0.8; }
@@ -47,8 +47,8 @@
         /* Secções e Tabelas */
         .section { margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px; }
         table { border-collapse: collapse; width: 100%; margin-top: 15px; background: white; }
-    th, td { border: 1px solid #dfe6e9; padding: 12px; text-align: center; }
-    th { background-color: #34495e; color: white; }
+        th, td { border: 1px solid #dfe6e9; padding: 12px; text-align: center; }
+        th { background-color: #34495e; color: white; }
         
         /* Botões e Alertas */
         button { background-color: #27ae60; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
@@ -57,12 +57,12 @@
         .conflito-list { color: #d63031; font-weight: bold; }
         
         /* Área do Parser Gerado */
-    .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
-    /* Código com destaque e ações */
-    .code-block { position: relative; background: #ffffff; color: #2c3e50; border-radius: 6px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 13px; overflow: auto; border:1px solid #e9eef2; max-height:520px; }
-    .code-actions { position: absolute; right: 10px; top: 10px; display:flex; gap:8px; }
-    .code-actions button { background:#1f6feb; padding:6px 10px; border-radius:4px; border:none; color:white; font-weight:600; cursor:pointer; }
-    .code-actions button.secondary { background:#2d3436; }
+        .parser-code { height: 250px; background-color: #2d3436; color: #fab1a0; border: none; padding: 15px; font-size: 13px; margin-top: 10px; }
+        /* Código com destaque e ações */
+        .code-block { position: relative; background: #ffffff; color: #2c3e50; border-radius: 6px; padding: 14px; font-family: 'Fira Code', monospace; font-size: 13px; overflow: auto; border:1px solid #e9eef2; max-height:520px; }
+        .code-actions { position: absolute; right: 10px; top: 10px; display:flex; gap:8px; }
+        .code-actions button { background:#1f6feb; padding:6px 10px; border-radius:4px; border:none; color:white; font-weight:600; cursor:pointer; }
+        .code-actions button.secondary { background:#2d3436; }
         
         /* Árvore de Derivação */
         #arvore-canvas { width: 100%; height: 500px; border: 1px solid #eee; background-color: #fdfdfd; border-radius: 4px; overflow: auto; margin-top: 10px; }
@@ -76,21 +76,27 @@
         .zoom-btn:hover { background-color: #2980b9; }
         .zoom-reset-btn { background-color: #95a5a6; }
         .zoom-reset-btn:hover { background-color: #7f8c8d; }
-    .mermaid-wrapper { border: 1px solid #eee; background: white; padding: 12px; border-radius: 4px; overflow: auto; min-height: 120px; display: flex; align-items: center; justify-content: center; }
-    .mermaid { transform-origin: top center; transition: transform 0.2s; }
-    /* Compact panels side-by-side */
-    .panels { display:flex; gap:16px; align-items:flex-start; }
-    .panel { flex:1; min-width:260px; background:#ffffff; border:1px solid #e9eef2; border-radius:8px; padding:12px; box-shadow: 0 2px 6px rgba(16,24,40,0.04); }
-    .panel-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
-    .small-btn { background:#34495e; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:600; }
-    .small-btn.ghost { background:transparent; color:#34495e; border:1px solid #e1e8ee; }
-    
-    /* Toast Notifications */
-    .toast { background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 14px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; font-weight: 500; }
-    .toast::before { content: '✓'; font-size: 20px; font-weight: bold; }
-    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
-    .toast.removing { animation: slideOut 0.3s ease-in; }
+        .mermaid-wrapper { border: 1px solid #eee; background: white; padding: 12px; border-radius: 4px; overflow: auto; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+        .mermaid { transform-origin: top center; transition: transform 0.2s; }
+        /* Compact panels side-by-side */
+        .panels { display:flex; gap:16px; align-items:flex-start; }
+        .panel { flex:1; min-width:260px; background:#ffffff; border:1px solid #e9eef2; border-radius:8px; padding:12px; box-shadow: 0 2px 6px rgba(16,24,40,0.04); }
+        .panel-header { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+        .small-btn { background:#34495e; color:white; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-weight:600; }
+        .small-btn.ghost { background:transparent; color:#34495e; border:1px solid #e1e8ee; }
+        
+        /* Toast Notifications */
+        .toast { background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 14px 20px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin-bottom: 10px; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease-out; font-weight: 500; }
+        .toast::before { content: '✓'; font-size: 20px; font-weight: bold; }
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+        .toast.removing { animation: slideOut 0.3s ease-in; }
+
+        /* Estilos do Modal do Protégé */
+        .modal { display: none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 60%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .close-modal { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-modal:hover, .close-modal:focus { color: black; text-decoration: none; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -100,11 +106,9 @@
         <p>Projeto de Engenharia de Linguagens · 2º Semestre 2026</p>
     </div>
 
-    <!-- Toast Container -->
     <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 10000; font-family: 'Segoe UI', sans-serif;"></div>
 
     <div class="container">
-        <!-- Left Panel - Form -->
         <div class="panel-left">
             <form method="POST" id="mainForm">
                 <input type="hidden" name="acao" id="acaoInput" value="analisar">
@@ -146,57 +150,18 @@
                     <p style="font-size: 12px; color: #666;">Separa os tokens por espaços.</p>
                 </div>
 
-                <button type="submit" style="width: 100%;">Analisar</button>
-            </form>
-        </div>
-
-        <!-- Right Panel - Results -->
-        <div class="panel-right">
-
-        {% if resultado %}
-
-            {% if resultado.erro_frase %}
-                <div class="alert alert-danger mt-3">
-                    <strong>Erro de Parsing:</strong> {{ resultado.erro_frase }}
-                </div>
-
-                {% if resultado.is_correcao %}
-                <div class="mt-2">
-                    <p class="mb-1 text-success"><strong>Preview da Frase Corrigida:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
-                    <button type="button" class="btn btn-warning" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
-                        Corrigir Frase
-                    </button>
-                </div>
-            {% else %}
-                <div class="mt-2">
-                    <p class="mb-1"><strong>Exemplo Simples:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
-                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
-                        Usar Frase Simples
-                    </button>
-                </div>
-            {% endif %}
-            {% endif %}
-
-            {% if resultado.erro %}
-                <div class="section">
-                    <div class="error-box">
-                        <strong>Erro detetado:</strong> {{ resultado.erro }}
-                    </div>
-                </div>
-            {% endif %}
-
-            {% if resultado.gramatica %}
-                <div class="section">
-                    <h3>Relatório de Conflitos LL(1)</h3>
+                {% if resultado and resultado.gramatica %}
+                <div class="section" style="border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
+                    <h3 style="margin-top: 0;">Relatório de Conflitos LL(1)</h3>
                     {% if resultado.conflitos %}
                         <ul class="conflito-list">
                             {% for c in resultado.conflitos %} <li>{{ c }}</li> {% endfor %}
                         </ul>
-                            {% if aviso_conflitos_persistentes %}
-                            <div style="margin-top:12px; padding:12px; border-radius:6px; background:#fff5d6; border:1px solid #f0c27b; color:#7d4f00;">
-                                <strong>Aviso:</strong> {{ aviso_conflitos_persistentes }}
-                            </div>
-                            {% endif %}
+                        {% if aviso_conflitos_persistentes %}
+                        <div style="margin-top:12px; padding:12px; border-radius:6px; background:#fff5d6; border:1px solid #f0c27b; color:#7d4f00;">
+                            <strong>Aviso:</strong> {{ aviso_conflitos_persistentes }}
+                        </div>
+                        {% endif %}
                         {% if sugestao %}
                         <div style="margin-top:10px;">
                             <button id="btnSugestao" type="button" style="background-color:#e67e22">Sugerir Correções</button>
@@ -223,23 +188,22 @@
                                 btn.addEventListener('click', function(){
                                     box.style.display = (box.style.display === 'none') ? 'block' : 'none';
                                 });
-                                    var btnAplicar = document.getElementById('btnAplicarSugestao');
-                                    var btnFechar = document.getElementById('btnFecharSugestao');
-                                    var sugestaoPre = document.getElementById('sugestaoTexto');
-                                    var textarea = document.getElementById('gramaticaTexto');
-                                    var acaoInput = document.getElementById('acaoInput');
-                                    var form = document.getElementById('mainForm');
-                                    if (btnAplicar && sugestaoPre && textarea && acaoInput && form) {
-                                        btnAplicar.addEventListener('click', function(){
-                                            // Copia a sugestão e pede ao backend para aplicar+reanalisar.
-                                            textarea.value = sugestaoPre.innerText.trim();
-                                            acaoInput.value = 'aplicar_sugestao';
-                                            form.submit();
-                                        });
-                                    }
-                                    if (btnFechar) {
-                                        btnFechar.addEventListener('click', function(){ box.style.display = 'none'; });
-                                    }
+                                var btnAplicar = document.getElementById('btnAplicarSugestao');
+                                var btnFechar = document.getElementById('btnFecharSugestao');
+                                var sugestaoPre = document.getElementById('sugestaoTexto');
+                                var textarea = document.getElementById('gramaticaTexto');
+                                var acaoInput = document.getElementById('acaoInput');
+                                var form = document.getElementById('mainForm');
+                                if (btnAplicar && sugestaoPre && textarea && acaoInput && form) {
+                                    btnAplicar.addEventListener('click', function(){
+                                        textarea.value = sugestaoPre.innerText.trim();
+                                        acaoInput.value = 'aplicar_sugestao';
+                                        form.submit();
+                                    });
+                                }
+                                if (btnFechar) {
+                                    btnFechar.addEventListener('click', function(){ box.style.display = 'none'; });
+                                }
                             });
                         </script>
                         {% endif %}
@@ -248,8 +212,48 @@
                         <p style="color: #27ae60; font-weight: bold;">✓ Gramática LL(1) válida! Sem conflitos detetados.</p>
                     {% endif %}
                 </div>
-                
+                {% endif %}
 
+                <button type="submit" style="width: 100%; margin-top: 20px;">Analisar</button>
+            </form>
+        </div>
+
+        <div class="panel-right">
+
+        {% if resultado %}
+
+            {% if resultado.erro_frase %}
+                <div class="alert alert-danger mt-3">
+                    <strong>Erro de Parsing:</strong> {{ resultado.erro_frase }}
+                </div>
+
+                {% if resultado.is_correcao %}
+                <div class="mt-2">
+                    <p class="mb-1 text-success"><strong>Preview da Frase Corrigida:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-warning" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Corrigir Frase
+                    </button>
+                </div>
+                {% else %}
+                <div class="mt-2">
+                    <p class="mb-1"><strong>Exemplo Simples:</strong> <code>{{ resultado.frase_sugestao }}</code></p>
+                    <button type="button" class="btn btn-secondary" onclick="document.getElementById('fraseInput').value = '{{ resultado.frase_sugestao }}'; document.getElementById('mainForm').submit();">
+                        Usar Frase Simples
+                    </button>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {% if resultado.erro %}
+                <div class="section">
+                    <div class="error-box">
+                        <strong>Erro detetado:</strong> {{ resultado.erro }}
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if resultado.gramatica %}
+                
                 <div class="section">
                     <h3>Conjuntos First e Follow</h3>
                     <div class="flex-row" style="align-items: flex-start;">
@@ -309,7 +313,7 @@
                             <tr>
                                 <td><strong>{{ nt }}</strong></td>
                                 {% for t in resultado.gramatica.terminais %}
-                                    <td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td>
+                                    <td><td>{{ ' '.join(derivacoes.get(t, ['-'])) }}</td></td>
                                 {% endfor %}
                                 <td>{{ ' '.join(derivacoes.get('$', ['-'])) }}</td>
                             </tr>
@@ -321,7 +325,6 @@
                 {% if resultado.arvore %}
                 <div class="section">
                     <h3>Árvore de Derivação</h3>
-
                     <div class="panels">
                         <div class="panel">
                             <div class="panel-header">
@@ -351,8 +354,7 @@
                                     <button type="button" class="zoom-btn zoom-reset-btn" onclick="resetZoomMermaid()">Reset</button>
                                 </div>
                                 <div class="mermaid-wrapper" id="mermaid-render-area">
-                                    <!-- Mermaid será renderizado aqui quando o utilizador pedir -->
-                                </div>
+                                    </div>
                             </div>
                         </div>
                     </div>
@@ -388,16 +390,18 @@
                         </select>
                     </div>
 
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 8px;"><strong>Visitor Editável:</strong></label>
-                        <textarea id="visitor-code-textarea" class="code-block" style="height: 350px; width: 100%; box-sizing: border-box;">{{ codigo_visitor }}</textarea>
-                    </div>
-
-                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                        <button type="button" id="btnSaveVisitor" class="btn btn-success" style="background-color: #27ae60; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Guardar Visitor</button>
-                        <button type="button" id="btnReloadVisitor" class="btn btn-secondary" style="background-color: #95a5a6; color: white; padding: 10px 16px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Recarregar</button>
-                        <button type="button" class="small-btn ghost" id="btnDownloadVisitor" style="padding: 10px 16px;">Descarregar</button>
-                        <button type="button" class="small-btn ghost" id="btnCopyVisitor" style="padding: 10px 16px;">Copiar</button>
+                    <div class="panel" style="margin-bottom: 15px;">
+                        <div class="panel-header">
+                            <strong>Código do Visitor Editável</strong>
+                            <div>
+                                <button type="button" class="small-btn ghost" id="btnDownloadVisitor">Descarregar</button>
+                                <button type="button" class="small-btn ghost" id="btnCopyVisitor">Copiar</button>
+                            </div>
+                        </div>
+                        <div style="position: relative; height: 350px; border: 1px solid #ddd; border-radius: 4px; background: #fff; text-align: left;">
+                            <pre style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; overflow: hidden; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; pointer-events: none;"><code id="visitor-code-highlight" class="language-python" style="background: transparent; padding: 0; margin: 0; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre; border: none;">{{ codigo_visitor }}</code></pre>
+                            <textarea id="visitor-code-textarea" spellcheck="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 10px; color: transparent; background: transparent; caret-color: #000; border: none; resize: none; overflow: auto; box-sizing: border-box; font-family: monospace; font-size: 14px; line-height: 1.5; white-space: pre;" oninput="updateVisitorHighlight(this.value)" onscroll="document.getElementById('visitor-code-highlight').parentElement.scrollTop = this.scrollTop; document.getElementById('visitor-code-highlight').parentElement.scrollLeft = this.scrollLeft;">{{ codigo_visitor }}</textarea>
+                        </div>
                     </div>
 
                     <div style="background-color: #f0f8ff; border-left: 4px solid #3498db; padding: 12px; border-radius: 4px; margin-bottom: 15px;">
@@ -423,26 +427,105 @@
                     </div>
                 </div>
                 {% endif %}
+
+                {% if codigo_parser %}
+                <div class="section">
+                    <div class="panel-header">
+                        <strong>Ontologia RDF/OWL</strong>
+                        <div>
+                            <button type="button" class="small-btn ghost" id="btnDownloadOntology">Descarregar</button>
+                            <button type="button" class="small-btn ghost" id="btnCopyOntology">Copiar</button>
+                            <button type="button" class="small-btn" id="btnOpenProtege" style="background-color: #8e44ad;">Abrir no Protégé</button>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px; margin-top: 10px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Ficheiro RDF (Editável):</strong></label>
+                        
+                        <div style="position: relative; height: 250px; border: 1px solid #ddd; border-radius: 4px; background: #ffffff; text-align: left;">
+                            <pre style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 15px; overflow: hidden; box-sizing: border-box; font-family: monospace; font-size: 11px; line-height: 1.5; pointer-events: none; background: transparent;"><code id="ontology-code-highlight" class="language-turtle" style="background: transparent; padding: 0; margin: 0; font-family: monospace; font-size: 11px; line-height: 1.5; white-space: pre; border: none;"></code></pre>
+                            
+                            <textarea id="ontology-output" spellcheck="false" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: 0; padding: 15px; color: transparent; background: transparent; caret-color: #333; border: none; resize: none; overflow: auto; box-sizing: border-box; font-family: monospace; font-size: 11px; line-height: 1.5; white-space: pre;" oninput="updateOntologyHighlight(this.value)" onscroll="document.getElementById('ontology-code-highlight').parentElement.scrollTop = this.scrollTop; document.getElementById('ontology-code-highlight').parentElement.scrollLeft = this.scrollLeft;"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>🔍 SPARQL Query</h3>
+                    
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Exemplos de Queries:</strong></label>
+                        <select id="sparqlExampleSelect" onchange="carregarExemploSparql()" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; margin-bottom: 10px;">
+                            <option value="">-- Selecionar Query de Exemplo --</option>
+                            <option value="all-terminals">Listar todos os Terminais</option>
+                            <option value="all-nonterminals">Listar todos os Não-Terminais</option>
+                            <option value="all-productions">Listar todas as Produções</option>
+                            <option value="conflicts">Listar todos os Conflitos</option>
+                            <option value="production-symbols">Símbolos por Produção</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Query SPARQL:</strong></label>
+                        <textarea id="sparqlQueryInput" placeholder="PREFIX ex: &lt;http://example.org/grammar#&gt;&#10;SELECT ?terminal ?label&#10;WHERE {&#10;  ?terminal a ex:Terminal ;&#10;            rdfs:label ?label .&#10;}" style="width: 100%; height: 150px; font-family: 'Fira Code', monospace; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box;"></textarea>
+                    </div>
+
+                    <button type="button" id="btnRunSparql" style="background-color: #9b59b6; color: white; padding: 12px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 10px;">Executar Query</button>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 10px;"><strong>Resultados:</strong></label>
+                        <div id="sparql-results-container" style="background: #f4f4f4; padding: 15px; border-radius: 4px; min-height: 100px; max-height: 350px; overflow: auto; border: 1px solid #ddd;">
+                            <div id="sparql-results" style="font-family: monospace; font-size: 12px; white-space: pre-wrap;"></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button type="button" id="btnCopySparqlResults" style="background-color: #3498db; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Copiar Resultados</button>
+                        <button type="button" id="btnDownloadSparqlResults" style="background-color: #27ae60; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold;">Descarregar JSON</button>
+                    </div>
+                </div>
+                {% endif %}
+
+
             {% endif %}
         {% endif %}
         </div>
-        <!-- End Right Panel -->
-    </div>
-    <!-- End Container -->
-    
+        </div>
+
+        <div id="protege-modal" class="modal" style="display:none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+            <div class="modal-content" style="background-color: #fefefe; margin: 10% auto; padding: 25px; border: 1px solid #888; width: 60%; max-width: 700px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+                <span class="close-modal" style="color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+                <h3 style="margin-top: 0; color: #2c3e50;">Como usar o Protégé com a sua Ontologia</h3>
+                <p>Para visualizar e editar o ficheiro <code>grammar.ttl</code>, precisa da aplicação Protégé. Siga estes passos:</p>
+                
+                <h4>1. Descarregar e Instalar o Protégé</h4>
+                <ul>
+                    <li>Aceda ao site oficial do Protégé: <a href="https://protege.stanford.edu/" target="_blank">https://protege.stanford.edu/</a></li>
+                    <li>Descarregue a versão mais recente para o seu sistema operativo (macOS, Windows ou Linux).</li>
+                    <li>Siga as instruções de instalação.</li>
+                </ul>
+
+                <h4>2. Abrir o Ficheiro da Ontologia</h4>
+                <p>O ficheiro da sua ontologia, <strong><code>grammar.ttl</code></strong>, foi guardado na pasta <strong><code>gerado/</code></strong> dentro do seu projeto.</p>
+                <ul>
+                    <li>Abra a aplicação Protégé.</li>
+                    <li>No menu, vá a <strong>File &gt; Open...</strong></li>
+                    <li>Navegue até à pasta do seu projeto e entre na pasta <code>gerado</code>.</li>
+                    <li>Selecione o ficheiro <code>grammar.ttl</code> e clique em "Open".</li>
+                </ul>
+                <p>Agora poderá explorar a estrutura da sua gramática como uma ontologia, visualizar as relações e executar queries SPARQL diretamente no Protégé.</p>
+            </div>
+        </div>
+
     <script type="module">
         import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-        // Não inicializar automaticamente; iremos renderizar sob pedido (lazy)
         mermaid.initialize({ startOnLoad: false, theme: 'default' });
-        // Expor a biblioteca mermaid ao escopo global para uso em scripts não-module
         window.mermaidLib = mermaid;
     </script>
-    <!-- Highlight.js CSS for Python-like appearance -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
     
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script>
-        // Lógica dos Exemplos
         const exemplos = {{ exemplos|tojson }};
         const frases_exemplo = {{ frases_exemplo|tojson }};
 
@@ -474,7 +557,6 @@
             });
         });
 
-        // Zoom para Mermaid
         let currentZoom = 1;
         function zoomMermaid(factor) {
             currentZoom *= factor;
@@ -491,9 +573,7 @@
             if (area && area.firstElementChild) area.firstElementChild.style.transform = 'scale(1)';
         }
 
-        // Handlers para mostrar / descarregar os painéis (texto e mermaid)
         document.addEventListener('DOMContentLoaded', function(){
-            // Função para mostrar toast de notificação
             function showToast(message, duration = 3000) {
                 const container = document.getElementById('toast-container');
                 const toast = document.createElement('div');
@@ -548,14 +628,12 @@
                     panelMer.style.display = 'block';
                     btnMer.textContent = 'Esconder';
 
-                    // Render mermaid lazily (apenas na primeira abertura)
                     if (!mermaidRendered) {
                         mermaidRendered = true;
                         const mermaidSrc = `{{ resultado.arvore_mermaid | replace('\n', '\\n') | replace('\r','') | safe }}`;
                         try {
                             const renderArea = document.getElementById('mermaid-render-area');
                             if (!renderArea) return;
-                            // Gera um id único para o svg
                             const svgId = 'm' + Date.now();
                             const { svg } = await window.mermaidLib.render(svgId, mermaidSrc);
                             renderArea.innerHTML = svg;
@@ -577,12 +655,9 @@
                 });
             }
 
-            // Botões para o código do parser gerado (download / copiar / testar)
             const btnDownloadParser = document.getElementById('btnDownloadParser');
             const btnCopyParser = document.getElementById('btnCopyParser');
             const parserCodeElem = document.getElementById('parser-code-block');
-            const acaoInput = document.getElementById('acaoInput');
-            const form = document.getElementById('mainForm');
 
             if (btnDownloadParser && parserCodeElem) {
                 btnDownloadParser.addEventListener('click', function(){
@@ -600,16 +675,12 @@
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(code);
                     } else {
-                        // fallback
                         const ta = document.createElement('textarea'); ta.value = code; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
                     }
                     showToast('Código do parser copiado para clipboard!');
                 });
             }
 
-            // 'Testar com Lexer' removed — form testing handled via Analysis flow
-
-            // Carregar lista de visitors disponíveis
             async function loadVisitorsList() {
                 try {
                     const response = await fetch('/api/list_visitors');
@@ -630,7 +701,6 @@
                 }
             }
 
-            // Visitor buttons (download / copy)
             const btnDownloadVisitor = document.getElementById('btnDownloadVisitor');
             const btnCopyVisitor = document.getElementById('btnCopyVisitor');
             const visitorCodeTextarea = document.getElementById('visitor-code-textarea');
@@ -657,13 +727,13 @@
                 });
             }
 
-            // Visitor selection
             const visitorSelect = document.getElementById('visitor-select');
             if (visitorSelect) {
                 visitorSelect.addEventListener('change', async function() {
                     const visitorName = this.value;
                     if (!visitorName) {
                         visitorCodeTextarea.value = '';
+                        if (typeof updateVisitorHighlight === 'function') updateVisitorHighlight('');
                         return;
                     }
 
@@ -672,6 +742,7 @@
                         if (response.ok) {
                             const code = await response.text();
                             visitorCodeTextarea.value = code;
+                            if (typeof updateVisitorHighlight === 'function') updateVisitorHighlight(code);
                             showToast(`Visitor '${visitorName}' carregado!`);
                         } else {
                             showToast('Erro ao carregar visitor!');
@@ -682,62 +753,6 @@
                 });
             }
 
-            // Save visitor button
-            const btnSaveVisitor = document.getElementById('btnSaveVisitor');
-            if (btnSaveVisitor) {
-                btnSaveVisitor.addEventListener('click', async function() {
-                    const code = visitorCodeTextarea.value;
-                    if (!code.trim()) {
-                        showToast('O código do visitor não pode estar vazio!');
-                        return;
-                    }
-
-                    // Pedir nome ao utilizador
-                    const currentName = visitorSelect.value || 'visitor_custom';
-                    const newName = prompt('Nome para guardar o visitor:', currentName);
-                    
-                    if (!newName) return;
-
-                    try {
-                        const response = await fetch('/api/save_visitor', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({
-                                name: newName,
-                                code: code
-                            })
-                        });
-
-                        const data = await response.json();
-                        if (response.ok) {
-                            showToast(`Visitor '${newName}' guardado com sucesso!`);
-                            // Recarregar lista de visitors
-                            loadVisitorsList();
-                            visitorSelect.value = newName;
-                        } else {
-                            showToast(`Erro ao guardar: ${data.error}`);
-                        }
-                    } catch (e) {
-                        showToast(`Erro: ${e.message}`);
-                    }
-                });
-            }
-
-            // Reload visitor button
-            const btnReloadVisitor = document.getElementById('btnReloadVisitor');
-            if (btnReloadVisitor) {
-                btnReloadVisitor.addEventListener('click', function() {
-                    const visitorName = visitorSelect.value;
-                    if (visitorName) {
-                        visitorSelect.dispatchEvent(new Event('change'));
-                    } else {
-                        visitorCodeTextarea.value = '';
-                        showToast('Visitor recarregado!');
-                    }
-                });
-            }
-
-            // Visitor interaction logic
             const runVisitorBtn = document.getElementById('run-visitor-btn');
             if (runVisitorBtn) {
                 runVisitorBtn.addEventListener('click', async function() {
@@ -764,12 +779,7 @@
                     if (scriptSection) scriptSection.style.display = 'none';
 
                     try {
-                        const payload = {
-                            gramatica: gramatica,
-                            frase: frase
-                        };
-
-                        // Usar visitor_name se selecionado, senão usar o código editado
+                        const payload = { gramatica: gramatica, frase: frase };
                         if (visitorName) {
                             payload.visitor_name = visitorName;
                         } else {
@@ -783,22 +793,13 @@
                         });
 
                         const data = await response.json();
-
                         if (response.ok) {
                             let output = '';
-                            if (data.stdout) {
-                                output += `[STDOUT]:\n${data.stdout}\n\n`;
-                            }
-                            
-                            let resultStr = '';
+                            if (data.stdout) output += `[STDOUT]:\n${data.stdout}\n\n`;
                             if (data.result !== null && data.result !== undefined) {
-                                resultStr = JSON.stringify(data.result, null, 2);
-                                output += `[RESULTADO]:\n${resultStr}`;
+                                output += `[RESULTADO]:\n${JSON.stringify(data.result, null, 2)}`;
                             }
-                            
                             outputPre.textContent = output || 'Execução concluída sem output.';
-                            
-                            // Se o resultado é uma string que parece um script (começa com #!/bin/bash), mostrar no painel de script
                             if (typeof data.result === 'string' && data.result.includes('#!/bin/bash')) {
                                 if (scriptPre) scriptPre.textContent = data.result;
                                 if (scriptSection) scriptSection.style.display = 'block';
@@ -812,7 +813,6 @@
                 });
             }
 
-            // Botão para copiar script
             const btnCopyScript = document.getElementById('btnCopyScript');
             const scriptPre = document.getElementById('visitor-script');
             if (btnCopyScript && scriptPre) {
@@ -825,90 +825,316 @@
                     if (navigator.clipboard && navigator.clipboard.writeText) {
                         navigator.clipboard.writeText(script);
                     } else {
-                        const ta = document.createElement('textarea');
-                        ta.value = script;
-                        document.body.appendChild(ta);
-                        ta.select();
-                        try {
-                            document.execCommand('copy');
-                        } catch(e){}
-                        ta.remove();
+                        const ta = document.createElement('textarea'); ta.value = script; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
                     }
                     showToast('Script copiado para clipboard!');
                 });
             }
 
-            // Carregar lista de visitors ao abrir a página
             if (visitorSelect) {
                 loadVisitorsList();
             }
 
-            // Ontology download button
+            // ==================== ONTOLOGY HANDLERS ====================
             const btnDownloadOntology = document.getElementById('btnDownloadOntology');
             if (btnDownloadOntology) {
-                btnDownloadOntology.addEventListener('click', function(){
-                    showToast('Ontologia (grammar.ttl) descarregada com sucesso!');
+                btnDownloadOntology.addEventListener('click', function() {
+                    const ontologyOutput = document.getElementById('ontology-output');
+                    const content = ontologyOutput ? ontologyOutput.value : '';
+                    if (!content || content.trim() === '') {
+                        showToast('Ontologia sem conteúdo para descarregar!');
+                        return;
+                    }
+                    const element = document.createElement('a');
+                    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(content));
+                    element.setAttribute('download', 'grammar.ttl');
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    showToast('Ontologia (grammar.ttl) descarregada com sucesso! ✓');
+                });
+            }
+            
+            const btnCopyOntology = document.getElementById('btnCopyOntology');
+            if (btnCopyOntology) {
+                btnCopyOntology.addEventListener('click', function() {
+                    const ontologyOutput = document.getElementById('ontology-output');
+                    const content = ontologyOutput ? ontologyOutput.value : '';
+                    if (!content || content.trim() === '') {
+                        showToast('Ontologia sem conteúdo para copiar!');
+                        return;
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(content).then(() => {
+                            showToast('Ontologia copiada para a área de transferência! ✓');
+                        }).catch(() => {
+                            showToast('Erro ao copiar ontologia.');
+                        });
+                    } else {
+                        const ta = document.createElement('textarea'); ta.value = content; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); showToast('Ontologia copiada para a área de transferência! ✓'); } catch(e){ showToast('Erro ao copiar ontologia.'); } ta.remove();
+                    }
+                });
+            }
+
+            const btnOpenProtege = document.getElementById('btnOpenProtege');
+            const protegeModal = document.getElementById('protege-modal');
+            const closeModal = document.querySelector('.close-modal');
+
+            if (btnOpenProtege && protegeModal && closeModal) {
+                btnOpenProtege.addEventListener('click', function() {
+                    protegeModal.style.display = 'block';
+                });
+                closeModal.addEventListener('click', function() {
+                    protegeModal.style.display = 'none';
+                });
+                window.addEventListener('click', function(event) {
+                    if (event.target == protegeModal) {
+                        protegeModal.style.display = 'none';
+                    }
+                });
+            }
+
+
+            // ==================== SPARQL HANDLERS ====================
+            const sparqlExamples = {
+                'all-terminals': `PREFIX ex: <http://example.org/grammar#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?terminal ?label\nWHERE {\n  ?terminal a ex:Terminal ;\n           rdfs:label ?label .\n}\nORDER BY ?label`,
+                'all-nonterminals': `PREFIX ex: <http://example.org/grammar#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?nonterminal ?label ?firstSet\nWHERE {\n  ?nonterminal a ex:NonTerminal ;\n              rdfs:label ?label ;\n              ex:firstSet ?firstSet .\n}\nORDER BY ?label`,
+                'all-productions': `PREFIX ex: <http://example.org/grammar#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?production ?lhs ?label\nWHERE {\n  ?production a ex:Production ;\n             ex:lhs ?lhs ;\n             rdfs:label ?label .\n  ?lhs rdfs:label ?lhsLabel .\n}\nORDER BY ?lhsLabel ?label`,
+                'conflicts': `PREFIX ex: <http://example.org/grammar#>\n\nSELECT ?conflict\nWHERE {\n  ?conflict a ex:Conflict .\n}`,
+                'production-symbols': `PREFIX ex: <http://example.org/grammar#>\nPREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>\n\nSELECT ?prod ?label ?rhs ?rhsLabel\nWHERE {\n  ?prod a ex:Production ;\n       rdfs:label ?label ;\n       ?p ?rhs .\n  ?rhs rdfs:label ?rhsLabel .\n  FILTER (?p IN (ex:hasRHSTerminal, ex:hasRHSNonTerminal))\n}\nLIMIT 50`
+            };
+
+            window.carregarExemploSparql = function() {
+                const select = document.getElementById('sparqlExampleSelect');
+                const queryInput = document.getElementById('sparqlQueryInput');
+                const exemplo = select.value;
+                if (exemplo && sparqlExamples[exemplo]) {
+                    queryInput.value = sparqlExamples[exemplo];
+                }
+            };
+
+            const btnRunSparql = document.getElementById('btnRunSparql');
+            if (btnRunSparql) {
+                btnRunSparql.addEventListener('click', async function() {
+                    const queryInput = document.getElementById('sparqlQueryInput');
+                    const resultsDiv = document.getElementById('sparql-results');
+                    const query = queryInput.value.trim();
+                    
+                    if (!query) {
+                        showToast('Query SPARQL vazia!');
+                        return;
+                    }
+                    resultsDiv.textContent = 'A executar query...';
+                    
+                    try {
+                        const response = await fetch('/api/run_sparql_query', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ query: query })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            if (data.results && data.results.length > 0) {
+                                if (data.variables && data.variables.length > 0) {
+                                    const colWidths = {};
+                                    data.variables.forEach(v => { colWidths[v] = v.length; });
+                                    data.results.forEach(row => {
+                                        data.variables.forEach(v => {
+                                            const valStr = row[v] !== undefined && row[v] !== null ? String(row[v]) : '';
+                                            if (valStr.length > colWidths[v]) { colWidths[v] = valStr.length; }
+                                        });
+                                    });
+                                    let table = '';
+                                    const sepLine = '+' + data.variables.map(v => '-'.repeat(colWidths[v] + 2)).join('+') + '+\n';
+                                    table += sepLine;
+                                    table += '|' + data.variables.map(v => ' ' + v.padEnd(colWidths[v]) + ' ').join('|') + '|\n';
+                                    table += sepLine;
+                                    data.results.forEach(row => {
+                                        table += '|' + data.variables.map(v => {
+                                            const valStr = row[v] !== undefined && row[v] !== null ? String(row[v]) : '';
+                                            return ' ' + valStr.padEnd(colWidths[v]) + ' ';
+                                        }).join('|') + '|\n';
+                                    });
+                                    table += sepLine;
+                                    resultsDiv.textContent = table;
+                                } else {
+                                    resultsDiv.textContent = JSON.stringify(data.results, null, 2);
+                                }
+                                resultsDiv.style.color = '#27ae60';
+                                showToast(`${data.count} resultado(s) encontrado(s)!`);
+                            } else {
+                                resultsDiv.textContent = 'Nenhum resultado encontrado.';
+                                resultsDiv.style.color = '#666';
+                            }
+                            window.lastSparqlResults = data.results;
+                        } else {
+                            resultsDiv.textContent = `Erro: ${data.error || 'Erro desconhecido.'}`;
+                            resultsDiv.style.color = '#c0392b';
+                        }
+                    } catch (e) {
+                        resultsDiv.textContent = `Erro de comunicação: ${e.message}`;
+                        resultsDiv.style.color = '#c0392b';
+                    }
+                });
+            }
+
+            const btnCopySparqlResults = document.getElementById('btnCopySparqlResults');
+            if (btnCopySparqlResults) {
+                btnCopySparqlResults.addEventListener('click', function() {
+                    const resultsDiv = document.getElementById('sparql-results');
+                    const content = resultsDiv.textContent;
+                    if (!content || content.includes('A executar')) {
+                        showToast('Execute uma query primeiro!');
+                        return;
+                    }
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        navigator.clipboard.writeText(content);
+                    } else {
+                        const ta = document.createElement('textarea'); ta.value = content; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch(e){} ta.remove();
+                    }
+                    showToast('Resultados copiados para clipboard!');
+                });
+            }
+
+            const btnDownloadSparqlResults = document.getElementById('btnDownloadSparqlResults');
+            if (btnDownloadSparqlResults) {
+                btnDownloadSparqlResults.addEventListener('click', function() {
+                    if (!window.lastSparqlResults || window.lastSparqlResults.length === 0) {
+                        showToast('Execute uma query primeiro!');
+                        return;
+                    }
+                    const content = JSON.stringify(window.lastSparqlResults, null, 2);
+                    const element = document.createElement('a');
+                    element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(content));
+                    element.setAttribute('download', 'sparql_results.json');
+                    element.style.display = 'none';
+                    document.body.appendChild(element);
+                    element.click();
+                    document.body.removeChild(element);
+                    showToast('sparql_results.json descarregado!');
+                });
+            }
+
+            const closeModalBtns = document.querySelectorAll('.close-modal');
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const modal = btn.closest('.modal');
+                    if (modal) {
+                        modal.style.display = 'none';
+                    }
+                });
+            });
+
+            const btnOpenModal = document.getElementById('btnOpenProtege');
+            if (btnOpenModal) {
+                btnOpenModal.addEventListener('click', function() {
+                    const modal = document.getElementById('protege-modal');
+                    if (modal) {
+                        modal.style.display = 'block';
+                    }
                 });
             }
         });
 
-        // Desenho da Árvore com D3.js
         {% if resultado and resultado.arvore %}
         const treeData = {{ resultado.arvore|tojson }};
         const width = 900, height = 500;
-        
         const svg = d3.select("#arvore-canvas").append("svg")
             .attr("width", width).attr("height", height)
             .append("g").attr("transform", "translate(50,50)");
-
         const tree = d3.tree().size([height - 100, width - 200]);
         const root = d3.hierarchy(treeData);
         tree(root);
-
         svg.selectAll(".link").data(root.links()).enter().append("path")
             .attr("class", "link").attr("d", d3.linkHorizontal().x(d => d.y).y(d => d.x));
-
         const node = svg.selectAll(".node").data(root.descendants()).enter().append("g")
             .attr("transform", d => `translate(${d.y},${d.x})`);
-
         node.append("circle").attr("r", 6).style("fill", d => d.children ? "#3498db" : "#2ecc71");
         node.append("text").attr("dy", -10).attr("x", 0).style("text-anchor", "middle").text(d => d.data.name);
         {% endif %}
-        
     </script>
-    <!-- Highlight.js for code syntax coloring -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function(){
             try {
-                // Highlight all code blocks (parser and visitor) with language-python
                 var codes = document.querySelectorAll('code.language-python');
                 codes.forEach(function(el){ if (window.hljs) window.hljs.highlightElement(el); });
+
+                if (typeof updateVisitorHighlight === 'function') {
+                    const ta = document.getElementById('visitor-code-textarea');
+                    if (ta) updateVisitorHighlight(ta.value);
+                }
             } catch(e) {
                 console.warn('Highlight.js init failed', e);
             }
             
-            // Gravar e restaurar o scroll (evitar a sensação de "salto" no refresh do Analisar)
-            const scrollPosEsq = sessionStorage.getItem('scrollEsq');
-            const scrollPosDir = sessionStorage.getItem('scrollDir');
-            
-            if (scrollPosEsq && document.querySelector('.panel-left')) {
-                document.querySelector('.panel-left').scrollTop = scrollPosEsq;
+            // ==================== INICIALIZAÇÃO DA ONTOLOGIA ====================
+            {% if resultado and resultado.ontology_content %}
+            const ontologyContent = `{{ resultado.ontology_content | safe }}`;
+            const ontologyOutput = document.getElementById('ontology-output');
+            const conflictsOutput = document.getElementById('ontology-conflicts');
+
+            if (ontologyOutput) {
+                ontologyOutput.value = ontologyContent;
+                updateOntologyHighlight(ontologyContent);
+                
+                {% if resultado.conflitos %}
+                const conflitos = {{ resultado.conflitos|tojson }};
+                if (conflitos && conflitos.length > 0) {
+                    conflictsOutput.textContent = 'Conflitos encontrados:\n\n' + conflitos.join('\n');
+                    conflictsOutput.style.background = '#fff3cd';
+                } else {
+                    conflictsOutput.textContent = 'Nenhum conflito encontrado! ✓';
+                    conflictsOutput.style.background = '#d4edda';
+                }
+                {% else %}
+                conflictsOutput.textContent = 'Nenhum conflito encontrado! ✓';
+                conflictsOutput.style.background = '#d4edda';
+                {% endif %}
             }
-            if (scrollPosDir && document.querySelector('.panel-right')) {
-                document.querySelector('.panel-right').scrollTop = scrollPosDir;
+            {% endif %}
+        
+            const targetMainForm = document.getElementById('mainForm');
+            if (targetMainForm) {
+                targetMainForm.addEventListener('submit', function() {
+                    const pL = document.querySelector('.panel-left');
+                    const pR = document.querySelector('.panel-right');
+                    if (pL) sessionStorage.setItem('scrollEsq', pL.scrollTop);
+                    if (pR) sessionStorage.setItem('scrollDir', pR.scrollTop);
+                });
+            }
+
+            const reloadExSelect = document.getElementById('exemploSelect');
+            if (reloadExSelect) {
+                reloadExSelect.addEventListener('change', function() {
+                    if (typeof loadVisitorsList === 'function') {
+                        loadVisitorsList();
+                    }
+                });
             }
         });
-        
-        // Guardar o scroll atual pouco antes de despoletar a submissão
-        const targetMainForm = document.getElementById('mainForm');
-        if (targetMainForm) {
-            targetMainForm.addEventListener('submit', function() {
-                const pL = document.querySelector('.panel-left');
-                const pR = document.querySelector('.panel-right');
-                if (pL) sessionStorage.setItem('scrollEsq', pL.scrollTop);
-                if (pR) sessionStorage.setItem('scrollDir', pR.scrollTop);
-            });
+
+        function updateVisitorHighlight(code) {
+            const highlightBlock = document.getElementById('visitor-code-highlight');
+            if (highlightBlock) {
+                highlightBlock.textContent = code;
+                if (window.hljs) {
+                    highlightBlock.removeAttribute('data-highlighted');
+                    window.hljs.highlightElement(highlightBlock);
+                }
+            }
+        }
+
+        function updateOntologyHighlight(code) {
+            const highlightBlock = document.getElementById('ontology-code-highlight');
+            if (highlightBlock) {
+                highlightBlock.textContent = code;
+                if (window.hljs) {
+                    highlightBlock.removeAttribute('data-highlighted');
+                    window.hljs.highlightElement(highlightBlock);
+                }
+            }
         }
     </script>
 </body>

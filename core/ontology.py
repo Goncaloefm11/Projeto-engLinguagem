@@ -11,19 +11,70 @@ import re
 
 EX_NS = "http://example.org/grammar#"
 
+# Mapa de caracteres especiais para nomes descritivos
+SPECIAL_CHARS_MAP = {
+    '(': 'bracket_open',
+    ')': 'bracket_close',
+    '[': 'square_open',
+    ']': 'square_close',
+    '{': 'brace_open',
+    '}': 'brace_close',
+    '<': 'angle_open',
+    '>': 'angle_close',
+    '|': 'pipe',
+    ';': 'semicolon',
+    ':': 'colon',
+    ',': 'comma',
+    '.': 'dot',
+    '+': 'plus',
+    '-': 'minus',
+    '*': 'star',
+    '/': 'slash',
+    '\\': 'backslash',
+    '=': 'equals',
+    '?': 'question',
+    '!': 'exclaim',
+    '@': 'at',
+    '#': 'hash',
+    '$': 'dollar',
+    '%': 'percent',
+    '^': 'caret',
+    '&': 'ampersand',
+    '~': 'tilde',
+    '`': 'backtick',
+    "'": 'quote',
+    '"': 'dquote',
+    ' ': 'space',
+    '\t': 'tab',
+    '\n': 'newline',
+    'ε': 'epsilon',
+}
+
+
 
 def _frag(s: str) -> str:
-    """Criar fragmento legível para o Turtle.
+    r"""Criar fragmento legível e único para o Turtle.
 
-    Mantemos um formato simples e previsível. Se o input tiver prefixos do tipo
-    'T_', 'NT_', 'P_' ou 'Conflict_' preservamos o prefixo e sanitizamos o resto.
-    O objetivo é evitar sufixos hash e produzir nomes como `T_e` com rótulos
-    separadamente contendo a expressão original.
+    Estratégia:
+    1. Preserva prefixos (T_, NT_, P_, Conflict_)
+    2. Remove aspas externas
+    3. Mapeia caracteres especiais para nomes descritivos
+    4. Para caracteres não mapeados, usa código hexadecimal (ex: \xHH)
+    5. Garante que cada símbolo tem um URI único
+
+    Exemplos:
+    - T_'(' -> ex:T_bracket_open
+    - T_'+' -> ex:T_plus
+    - T_sym -> ex:T_sym
+    - T_'#' -> ex:T_hash
+    - T_'Ω' -> ex:T_x03A9  (código Unicode)
     """
     if s is None:
         s = 'unk'
     s = str(s)
-    prefix = None
+    
+    # Extrair prefixo se existir
+    prefix = ''
     core = s
     if s.startswith('T_'):
         prefix = 'T_'
@@ -38,19 +89,35 @@ def _frag(s: str) -> str:
         prefix = 'Conflict_'
         core = s[len('Conflict_'):]
 
-    # remove aspas externas se existirem
-    if len(core) >= 2 and ((core[0] == '"' and core[-1] == '"') or (core[0] == "'" and core[-1] == "'")):
-        core = core[1:-1]
+    # Remove aspas externas se existirem
+    if len(core) >= 2:
+        if (core[0] == '"' and core[-1] == '"') or (core[0] == "'" and core[-1] == "'"):
+            core = core[1:-1]
 
-    # substituir epsilon por 'e' para nomes compactos (pedido do utilizador)
-    core = core.replace('ε', 'eps')
-
-    # sanitizar para ASCII-friendly fragment
-    safe = ''.join(c if (c.isalnum() or c in ('_', '-')) else '_' for c in core)
+    # Processar cada carácter
+    result = []
+    for char in core:
+        if char in SPECIAL_CHARS_MAP:
+            # Usar nome descritivo
+            result.append(SPECIAL_CHARS_MAP[char])
+        elif char.isalnum() or char == '_':
+            # Caractere seguro - adicionar diretamente
+            result.append(char)
+        else:
+            # Usar código hexadecimal (Unicode) para caracteres especiais
+            hex_code = f"x{ord(char):04X}".lower()
+            result.append(hex_code)
+    
+    # Juntar componentes com _ apenas entre itens especiais
+    safe = ''.join(result)
+    
+    # Limpar múltiplos underscores
     safe = re.sub('_+', '_', safe).strip('_')
     if not safe:
         safe = 'sym'
-    return f"{prefix or ''}{safe}"
+    
+    return f"{prefix}{safe}"
+
 
 
 def _try_rdflib_available():
