@@ -1,7 +1,7 @@
 #core/parser_LL1.py
 #calcula first, follow, tabela e arvore
 def calcular_first(gramatica):
-    # Inicializa os conjuntos FIRST para cada Não-Terminal 
+    # Inicia os conjuntos FIRST para cada Não-Terminal 
     first = {nt: set() for nt in gramatica['nao_terminais']}
     
     mudou = True
@@ -65,7 +65,6 @@ def calcular_follow(gramatica, firsts):
                     if simbolo in gramatica['nao_terminais']:
                         tamanho_antes = len(follow[simbolo])
                         
-                        # Espreitar o que vem a seguir (beta)
                         beta = prod[i+1:]
                         
                         if beta:
@@ -155,7 +154,7 @@ def gerar_arvore_derivacao(tokens, gramatica, tabela):
                 if input_tokens:
                     prox_simb = input_tokens.pop(0)
                 return no
-            # Debug: devolve informação mais completa sobre o token e o que era esperado
+            # Devolve informação mais completa sobre o token e o que era esperado
             return None, (f"Token inesperado valor='{prox_simb.get('value')}', "
                           f"type={repr(prox_simb.get('type'))}, "
                           f"candidates={prox_simb.get('candidates')} ; esperado {repr(nt_atual)}")

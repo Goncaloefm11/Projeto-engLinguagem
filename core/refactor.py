@@ -14,7 +14,6 @@ def propor_correcoes(gramatica_original):
     if not mod_rec and not mod_fat:
         return None # Nada a sugerir
 
-    # Convertemos para texto para o utilizador ler
     texto_sugerido = gramatica_para_texto(g_nova)
     
     return {
@@ -120,7 +119,6 @@ def fatorizar_esquerda(gramatica):
         if simbolo in gramatica['terminais'] or simbolo == 'ε':
             return simbolo
         # Se for Não-Terminal, tentamos ver o primeiro símbolo da sua primeira produção
-        # Nota: Isto é uma simplificação. O ideal seria usar o conjunto FIRST.
         sub_prods = gramatica['producoes'].get(simbolo, [])
         if sub_prods and len(sub_prods[0]) > 0:
             return obter_primeiro_token(sub_prods[0])

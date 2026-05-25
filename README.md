@@ -1,7 +1,7 @@
 # Grammar Playground (GP)
 ### Engenharia de Linguagens — 2026
 
-> Ambiente gráfico e computacional web para especificação, análise, otimização e transformação de Gramáticas Independentes de Contexto (GICs) baseadas no modelo preditivo **LL(1)**.
+Ambiente gráfico e computacional web para especificação, análise, otimização e transformação de Gramáticas Independentes de Contexto (GICs) baseadas no modelo preditivo **LL(1)**.
 
 O sistema valida restrições gramaticais, gera autómatos (parsers) e árvores de derivação sintática abstrata (AST), e estende a semântica gramatical para a Web Semântica através da exportação de grafos de conhecimento e execução de queries ontológicas estruturadas.
 

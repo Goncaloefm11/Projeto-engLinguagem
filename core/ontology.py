@@ -122,7 +122,7 @@ def _frag(s: str) -> str:
 
 def _try_rdflib_available():
     try:
-        import rdflib  # type: ignore
+        import rdflib  
         return True
     except Exception:
         return False
@@ -156,7 +156,7 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
         g.add((EX.Production, RDF.type, OWL.Class))
         g.add((EX.Conflict, RDF.type, OWL.Class))
 
-        # Grammar individual
+        # Gramática
         gram_uri = URIRef(EX + _frag(gramatica.get('inicial', 'G')))
         g.add((gram_uri, RDF.type, EX.Grammar))
         g.add((gram_uri, RDFS.label, Literal('Grammar')))
@@ -164,14 +164,14 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
         nt_map = {}
         t_map = {}
 
-        # Terminals
+        # Terminais
         for t in gramatica.get('terminais', []):
             u = URIRef(EX + _frag('T_'+str(t)))
             t_map[t] = u
             g.add((u, RDF.type, EX.Terminal))
             g.add((u, RDFS.label, Literal(str(t))))
 
-        # Non-terminals
+        # Nao Terminals (com first/follow sets se disponíveis)
         for nt in gramatica.get('nao_terminais', []):
             u = URIRef(EX + _frag('NT_'+str(nt)))
             nt_map[nt] = u
@@ -183,7 +183,7 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
             if follows and nt in follows:
                 g.add((u, EX.followSet, Literal(','.join(sorted(follows[nt])))))
 
-        # Productions
+        # Producoes
         prod_map = {}
         for nt, prods in gramatica.get('producoes', {}).items():
             for idx, prod in enumerate(prods):
@@ -194,7 +194,7 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
                 g.add((p_uri, EX.lhs, nt_map[nt]))
                 g.add((gram_uri, EX.hasProduction, p_uri))
                 g.add((p_uri, RDFS.label, Literal(' '.join(prod))))
-                # RHS symbols
+                # simbolos
                 for pos, sym in enumerate(prod):
                     if sym in gramatica.get('nao_terminais', []):
                         g.add((p_uri, EX.hasRHSNonTerminal, nt_map[sym]))
@@ -208,7 +208,7 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
                             g.add((t_uri, RDFS.label, Literal(str(s_clean))))
                         g.add((p_uri, EX.hasRHSTerminal, t_map[s_clean]))
 
-        # Conflicts
+        # Conflitos
         if conflitos:
             for i, c in enumerate(conflitos):
                 c_uri = URIRef(EX + _frag('Conflict_'+str(i)))
@@ -280,7 +280,7 @@ def gerar_ontologia(gramatica: Dict, firsts: Optional[Dict]=None, follows: Optio
         for i, c in enumerate(conflitos):
             cfrag = _frag('Conflict_'+str(i))
             lines.append(f"ex:{cfrag} a ex:Conflict ; rdfs:comment \"{str(c)}\" .")
-            # link to productions by label best-effort
+        
             for (nt, idx), pfrag in prod_map.items():
                 label = ' '.join(gramatica.get('producoes', {}).get(nt, [])[idx])
                 if label and label in c:

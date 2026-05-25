@@ -2,137 +2,261 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
-ex:Conflict a owl:Class .
-
-ex:Lista a ex:Grammar ;
+ex:SQuery a ex:Grammar ;
     rdfs:label "Grammar" ;
-    ex:hasNonTerminal ex:NT_Cont,
-        ex:NT_Elem,
-        ex:NT_Elems,
-        ex:NT_Lista,
-        ex:NT_Resto,
-        ex:NT_int,
-        ex:NT_string ;
-    ex:hasProduction ex:Cont_prod_0,
-        ex:Cont_prod_1,
-        ex:Elem_prod_0,
-        ex:Elem_prod_1,
-        ex:Elems_prod_0,
-        ex:Lista_prod_0,
-        ex:Resto_prod_0,
-        ex:Resto_prod_1,
-        ex:int_prod_0,
-        ex:string_prod_0 .
+    ex:hasNonTerminal ex:NT_Coluna,
+        ex:NT_Colunas,
+        ex:NT_ListaColunas,
+        ex:NT_ListaColunas_P,
+        ex:NT_ListaIds,
+        ex:NT_ListaIds_P,
+        ex:NT_ListaLinhas,
+        ex:NT_ListaLinhas_P,
+        ex:NT_ListaVal,
+        ex:NT_ListaVal_P,
+        ex:NT_Query,
+        ex:NT_SQuery,
+        ex:NT_id,
+        ex:NT_number ;
+    ex:hasProduction ex:Coluna_prod_0,
+        ex:Coluna_prod_1,
+        ex:Colunas_prod_0,
+        ex:Colunas_prod_1,
+        ex:ListaColunas_P_prod_0,
+        ex:ListaColunas_P_prod_1,
+        ex:ListaColunas_prod_0,
+        ex:ListaIds_P_prod_0,
+        ex:ListaIds_P_prod_1,
+        ex:ListaIds_prod_0,
+        ex:ListaLinhas_P_prod_0,
+        ex:ListaLinhas_P_prod_1,
+        ex:ListaLinhas_prod_0,
+        ex:ListaVal_P_prod_0,
+        ex:ListaVal_P_prod_1,
+        ex:ListaVal_prod_0,
+        ex:Query_prod_0,
+        ex:SQuery_prod_0,
+        ex:id_prod_0,
+        ex:number_prod_0 .
 
-ex:Cont_prod_0 a ex:Production ;
-    rdfs:label "]" ;
-    ex:hasRHSTerminal ex:T_square_close ;
-    ex:lhs ex:NT_Cont .
+ex:Coluna_prod_0 a ex:Production ;
+    rdfs:label "number" ;
+    ex:hasRHSNonTerminal ex:NT_number ;
+    ex:lhs ex:NT_Coluna .
 
-ex:Cont_prod_1 a ex:Production ;
-    rdfs:label "Elems ]" ;
-    ex:hasRHSNonTerminal ex:NT_Elems ;
-    ex:hasRHSTerminal ex:T_square_close ;
-    ex:lhs ex:NT_Cont .
+ex:Coluna_prod_1 a ex:Production ;
+    rdfs:label "id" ;
+    ex:hasRHSNonTerminal ex:NT_id ;
+    ex:lhs ex:NT_Coluna .
 
-ex:Elem_prod_0 a ex:Production ;
-    rdfs:label "int" ;
-    ex:hasRHSNonTerminal ex:NT_int ;
-    ex:lhs ex:NT_Elem .
+ex:Colunas_prod_0 a ex:Production ;
+    rdfs:label "*" ;
+    ex:hasRHSTerminal ex:T_star ;
+    ex:inConflict ex:Conflict_0 ;
+    ex:lhs ex:NT_Colunas .
 
-ex:Elem_prod_1 a ex:Production ;
-    rdfs:label "string" ;
-    ex:hasRHSNonTerminal ex:NT_string ;
-    ex:lhs ex:NT_Elem .
+ex:Colunas_prod_1 a ex:Production ;
+    rdfs:label "ListaColunas" ;
+    ex:hasRHSNonTerminal ex:NT_ListaColunas ;
+    ex:lhs ex:NT_Colunas .
 
-ex:Elems_prod_0 a ex:Production ;
-    rdfs:label "Elem Resto" ;
-    ex:hasRHSNonTerminal ex:NT_Elem,
-        ex:NT_Resto ;
-    ex:lhs ex:NT_Elems .
+ex:Conflict a owl:Class .
 
 ex:Grammar a owl:Class .
 
-ex:Lista_prod_0 a ex:Production ;
-    rdfs:label "[ Cont" ;
-    ex:hasRHSNonTerminal ex:NT_Cont ;
-    ex:hasRHSTerminal ex:T_square_open ;
-    ex:lhs ex:NT_Lista .
+ex:ListaColunas_P_prod_0 a ex:Production ;
+    rdfs:label ", id ListaColunas_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaColunas_P,
+        ex:NT_id ;
+    ex:hasRHSTerminal ex:T_comma ;
+    ex:lhs ex:NT_ListaColunas_P .
 
-ex:Resto_prod_0 a ex:Production ;
+ex:ListaColunas_P_prod_1 a ex:Production ;
     rdfs:label "ε" ;
     ex:hasRHSTerminal ex:T_epsilon ;
-    ex:lhs ex:NT_Resto .
+    ex:lhs ex:NT_ListaColunas_P .
 
-ex:Resto_prod_1 a ex:Production ;
-    rdfs:label ", Elem Resto" ;
-    ex:hasRHSNonTerminal ex:NT_Elem,
-        ex:NT_Resto ;
-    ex:hasRHSTerminal ex:T_comma ;
-    ex:lhs ex:NT_Resto .
+ex:ListaColunas_prod_0 a ex:Production ;
+    rdfs:label "id ListaColunas_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaColunas_P,
+        ex:NT_id ;
+    ex:lhs ex:NT_ListaColunas .
+
+ex:ListaIds_P_prod_0 a ex:Production ;
+    rdfs:label "id ListaIds_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaIds_P,
+        ex:NT_id ;
+    ex:lhs ex:NT_ListaIds_P .
+
+ex:ListaIds_P_prod_1 a ex:Production ;
+    rdfs:label "ε" ;
+    ex:hasRHSTerminal ex:T_epsilon ;
+    ex:lhs ex:NT_ListaIds_P .
+
+ex:ListaIds_prod_0 a ex:Production ;
+    rdfs:label "id ListaIds_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaIds_P,
+        ex:NT_id ;
+    ex:lhs ex:NT_ListaIds .
+
+ex:ListaLinhas_P_prod_0 a ex:Production ;
+    rdfs:label "SEP ListaVal ListaLinhas_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaLinhas_P,
+        ex:NT_ListaVal ;
+    ex:hasRHSTerminal ex:T_SEP ;
+    ex:lhs ex:NT_ListaLinhas_P .
+
+ex:ListaLinhas_P_prod_1 a ex:Production ;
+    rdfs:label "ε" ;
+    ex:hasRHSTerminal ex:T_epsilon ;
+    ex:lhs ex:NT_ListaLinhas_P .
+
+ex:ListaLinhas_prod_0 a ex:Production ;
+    rdfs:label "ListaVal ListaLinhas_P" ;
+    ex:hasRHSNonTerminal ex:NT_ListaLinhas_P,
+        ex:NT_ListaVal ;
+    ex:lhs ex:NT_ListaLinhas .
+
+ex:ListaVal_P_prod_0 a ex:Production ;
+    rdfs:label "Coluna ListaVal_P" ;
+    ex:hasRHSNonTerminal ex:NT_Coluna,
+        ex:NT_ListaVal_P ;
+    ex:lhs ex:NT_ListaVal_P .
+
+ex:ListaVal_P_prod_1 a ex:Production ;
+    rdfs:label "ε" ;
+    ex:hasRHSTerminal ex:T_epsilon ;
+    ex:lhs ex:NT_ListaVal_P .
+
+ex:ListaVal_prod_0 a ex:Production ;
+    rdfs:label "Coluna ListaVal_P" ;
+    ex:hasRHSNonTerminal ex:NT_Coluna,
+        ex:NT_ListaVal_P ;
+    ex:lhs ex:NT_ListaVal .
+
+ex:Query_prod_0 a ex:Production ;
+    rdfs:label "SELECT Colunas FROM id" ;
+    ex:hasRHSNonTerminal ex:NT_Colunas,
+        ex:NT_id ;
+    ex:hasRHSTerminal ex:T_FROM,
+        ex:T_SELECT ;
+    ex:lhs ex:NT_Query .
+
+ex:SQuery_prod_0 a ex:Production ;
+    rdfs:label "Query number ListaIds ListaLinhas" ;
+    ex:hasRHSNonTerminal ex:NT_ListaIds,
+        ex:NT_ListaLinhas,
+        ex:NT_Query,
+        ex:NT_number ;
+    ex:lhs ex:NT_SQuery .
+
+ex:T_FROM a ex:Terminal ;
+    rdfs:label "FROM" .
+
+ex:T_SELECT a ex:Terminal ;
+    rdfs:label "SELECT" .
+
+ex:T_SEP a ex:Terminal ;
+    rdfs:label "SEP" .
 
 ex:T_comma a ex:Terminal ;
     rdfs:label "," .
 
-ex:T_epsilon a ex:Terminal ;
-    rdfs:label "ε" .
-
-ex:T_square_open a ex:Terminal ;
-    rdfs:label "[" .
-
 ex:T_square_open0minus9square_closeplus a ex:Terminal ;
     rdfs:label "[0-9]+" .
 
-ex:T_square_opencaretangle_openangle_closesquare_closeplus a ex:Terminal ;
-    rdfs:label "[^<>]+" .
+ex:T_square_openaminuszAminusZ_square_closesquare_openaminuszAminusZ0minus9_square_closestar a ex:Terminal ;
+    rdfs:label "[a-zA-Z_][a-zA-Z0-9_]*" .
 
-ex:int_prod_0 a ex:Production ;
+ex:T_star a ex:Terminal ;
+    rdfs:label "*" .
+
+ex:id_prod_0 a ex:Production ;
+    rdfs:label "[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:hasRHSTerminal ex:T_square_openaminuszAminusZ_square_closesquare_openaminuszAminusZ0minus9_square_closestar ;
+    ex:inConflict ex:Conflict_0 ;
+    ex:lhs ex:NT_id .
+
+ex:number_prod_0 a ex:Production ;
     rdfs:label "[0-9]+" ;
     ex:hasRHSTerminal ex:T_square_open0minus9square_closeplus ;
-    ex:lhs ex:NT_int .
+    ex:lhs ex:NT_number .
 
-ex:string_prod_0 a ex:Production ;
-    rdfs:label "[^<>]+" ;
-    ex:hasRHSTerminal ex:T_square_opencaretangle_openangle_closesquare_closeplus ;
-    ex:lhs ex:NT_string .
+ex:Conflict_0 a ex:Conflict ;
+    rdfs:comment "Conflito FIRST/FOLLOW em ListaIds_P com terminal '[a-zA-Z_][a-zA-Z0-9_]*'" .
 
-ex:NT_Lista a ex:NonTerminal ;
-    rdfs:label "Lista" ;
-    ex:firstSet "[" ;
+ex:NT_SQuery a ex:NonTerminal ;
+    rdfs:label "SQuery" ;
+    ex:firstSet "SELECT" ;
     ex:followSet "$" .
 
-ex:T_square_close a ex:Terminal ;
-    rdfs:label "]" .
+ex:NT_ListaColunas a ex:NonTerminal ;
+    rdfs:label "ListaColunas" ;
+    ex:firstSet "[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "FROM" .
 
-ex:NT_Elems a ex:NonTerminal ;
-    rdfs:label "Elems" ;
-    ex:firstSet "[0-9]+,[^<>]+" ;
-    ex:followSet "]" .
+ex:NT_ListaIds a ex:NonTerminal ;
+    rdfs:label "ListaIds" ;
+    ex:firstSet "[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" .
 
-ex:NT_int a ex:NonTerminal ;
-    rdfs:label "int" ;
+ex:NT_ListaLinhas a ex:NonTerminal ;
+    rdfs:label "ListaLinhas" ;
+    ex:firstSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "$" .
+
+ex:NT_Query a ex:NonTerminal ;
+    rdfs:label "Query" ;
+    ex:firstSet "SELECT" ;
+    ex:followSet "[0-9]+" .
+
+ex:NT_Colunas a ex:NonTerminal ;
+    rdfs:label "Colunas" ;
+    ex:firstSet "*,[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "FROM" .
+
+ex:NT_ListaVal a ex:NonTerminal ;
+    rdfs:label "ListaVal" ;
+    ex:firstSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "$,SEP" .
+
+ex:NT_number a ex:NonTerminal ;
+    rdfs:label "number" ;
     ex:firstSet "[0-9]+" ;
-    ex:followSet ",,]" .
+    ex:followSet "$,SEP,[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" .
 
-ex:NT_string a ex:NonTerminal ;
-    rdfs:label "string" ;
-    ex:firstSet "[^<>]+" ;
-    ex:followSet ",,]" .
+ex:T_epsilon a ex:Terminal ;
+    rdfs:label "ε" .
 
-ex:NT_Cont a ex:NonTerminal ;
-    rdfs:label "Cont" ;
-    ex:firstSet "[0-9]+,[^<>]+,]" ;
+ex:NT_Coluna a ex:NonTerminal ;
+    rdfs:label "Coluna" ;
+    ex:firstSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "$,SEP,[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" .
+
+ex:NT_ListaColunas_P a ex:NonTerminal ;
+    rdfs:label "ListaColunas_P" ;
+    ex:firstSet ",,ε" ;
+    ex:followSet "FROM" .
+
+ex:NT_ListaIds_P a ex:NonTerminal ;
+    rdfs:label "ListaIds_P" ;
+    ex:firstSet "[a-zA-Z_][a-zA-Z0-9_]*,ε" ;
+    ex:followSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" .
+
+ex:NT_ListaLinhas_P a ex:NonTerminal ;
+    rdfs:label "ListaLinhas_P" ;
+    ex:firstSet "SEP,ε" ;
     ex:followSet "$" .
 
-ex:NT_Elem a ex:NonTerminal ;
-    rdfs:label "Elem" ;
-    ex:firstSet "[0-9]+,[^<>]+" ;
-    ex:followSet ",,]" .
+ex:NT_ListaVal_P a ex:NonTerminal ;
+    rdfs:label "ListaVal_P" ;
+    ex:firstSet "[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*,ε" ;
+    ex:followSet "$,SEP" .
 
-ex:NT_Resto a ex:NonTerminal ;
-    rdfs:label "Resto" ;
-    ex:firstSet ",,ε" ;
-    ex:followSet "]" .
+ex:NT_id a ex:NonTerminal ;
+    rdfs:label "id" ;
+    ex:firstSet "[a-zA-Z_][a-zA-Z0-9_]*" ;
+    ex:followSet "$,,,FROM,SEP,[0-9]+,[a-zA-Z_][a-zA-Z0-9_]*" .
 
 ex:Terminal a owl:Class .
 

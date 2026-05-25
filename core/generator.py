@@ -35,7 +35,7 @@ def gerar_codigo_parser(gramatica, tabela):
     # Mapear não-terminais para nomes seguros (para usar em identificadores)
     nt_safe = {nt: _sanitize(nt) for nt in gramatica.get('nao_terminais', [])}
 
-    # Gerar funções para cada Não-Terminal (usando nomes seguros)
+    # Gerar funções para cada Não-Terminal 
     for nt, caminhos in tabela.items():
         safe_nt = nt_safe.get(nt, _sanitize(nt))
         codigo.append(f"def rec_{safe_nt}():")
@@ -61,31 +61,27 @@ def gerar_codigo_parser(gramatica, tabela):
             else:
                 for j, simbolo in enumerate(prod): # enumerate para ter id único de cada símbolo
                     if simbolo in gramatica.get('nao_terminais', []):
-                        # Usa o nome seguro do não-terminal
                         safe_child = nt_safe.get(simbolo, _sanitize(simbolo))
                         codigo.append(f"        filho_{j} = rec_{safe_child}()")
                         codigo.append(f"        if filho_{j}: no_atual['children'].append(filho_{j})")
                     else:
-                        # CORREÇÃO: Limpar aspas com segurança e capturar/adicionar o filho
+                        # Limpar aspas com segurança e capturar/adicionar o filho
                         if len(simbolo) >= 2 and simbolo[0] == "'" and simbolo[-1] == "'":
                             s_clean = simbolo[1:-1]
                         else:
                             s_clean = simbolo
                         codigo.append(f"        filho_{j} = rec_term({repr(s_clean)})")
                         codigo.append(f"        if filho_{j}: no_atual['children'].append(filho_{j})")
-                    
-                # 2. No FINAL, (não imprimimos a produção) — apenas construímos a árvore
             
-            # CORREÇÃO: Retornar o nó se entrou nesta condição (construção da AST)
+            # Retornar o nó se entrou nesta condição (construção da AST)
             codigo.append("        return no_atual")
         
-        # CORREÇÃO: Fallback final caso nenhuma condição se verifique
+        # Fallback final caso nenhuma condição se verifique
         codigo.append("    else:")
         codigo.append("        parser_error(prox_simb)")
         codigo.append("        return None\n")
 
     # --- Runner/tokenizador genérico embutido ---
-    # Precomputar nome seguro da função inicial para o runner
     inicial_safe = _sanitize(gramatica.get('inicial')) if gramatica.get('inicial') else ''
     runner = [
         "",
@@ -279,8 +275,6 @@ def gerar_codigo_visitor(gramatica):
         codigo.append("            results.append(self._convert_leaf(c))")
         codigo.append("    return {\"%s\": results}" % nt)
         codigo.append("")
-
-    # Main de demonstração (opcional) para testar o visitor quando executado isoladamente
     codigo.append("if __name__ == '__main__':")
     codigo.append("    print('Este ficheiro define TreeVisitor. Importa-o em parser_generated.py e usa-o para processar a árvore.')")
 
@@ -293,7 +287,6 @@ def gerar_codigo_parser_table(gramatica, tabela):
     O ficheiro contém a gramática, a tabela (com chaves já limpas) e um
     runtime `parse(nt)` que usa a tabela para escolher produções.
     """
-    # Serializar tabela de forma legível
     import json as _json
 
     # Garantir que a tabela tem chaves string e producoes como listas

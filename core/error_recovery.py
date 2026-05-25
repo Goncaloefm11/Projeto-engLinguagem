@@ -70,7 +70,7 @@ def sugerir_recuperacao(stack_esperado, token_recebido, gramatica, tabela):
             'descricao': f"Inserir token '{alvo}' no final da frase." if token_recebido == '$' else f"Inserir token '{alvo}' antes de '{token_recebido}'."
         })
 
-    # 3. Panic Mode Recovery: Remoção
+    # 3. Remoção
     if token_recebido != '$':
         sugestoes.append({
             'acao': 'REMOVER',
