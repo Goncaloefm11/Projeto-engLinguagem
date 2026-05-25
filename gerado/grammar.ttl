@@ -4,57 +4,139 @@
 
 ex:Conflict a owl:Class .
 
-ex:S a ex:Grammar ;
+ex:Lista a ex:Grammar ;
     rdfs:label "Grammar" ;
-    ex:hasNonTerminal ex:NT_S,
-        ex:NT_S_F ;
-    ex:hasProduction ex:S_F_prod_0,
-        ex:S_F_prod_1,
-        ex:S_prod_0 .
+    ex:hasNonTerminal ex:NT_Cont,
+        ex:NT_Elem,
+        ex:NT_Elems,
+        ex:NT_Lista,
+        ex:NT_Resto,
+        ex:NT_int,
+        ex:NT_string ;
+    ex:hasProduction ex:Cont_prod_0,
+        ex:Cont_prod_1,
+        ex:Elem_prod_0,
+        ex:Elem_prod_1,
+        ex:Elems_prod_0,
+        ex:Lista_prod_0,
+        ex:Resto_prod_0,
+        ex:Resto_prod_1,
+        ex:int_prod_0,
+        ex:string_prod_0 .
+
+ex:Cont_prod_0 a ex:Production ;
+    rdfs:label "]" ;
+    ex:hasRHSTerminal ex:T_square_close ;
+    ex:lhs ex:NT_Cont .
+
+ex:Cont_prod_1 a ex:Production ;
+    rdfs:label "Elems ]" ;
+    ex:hasRHSNonTerminal ex:NT_Elems ;
+    ex:hasRHSTerminal ex:T_square_close ;
+    ex:lhs ex:NT_Cont .
+
+ex:Elem_prod_0 a ex:Production ;
+    rdfs:label "int" ;
+    ex:hasRHSNonTerminal ex:NT_int ;
+    ex:lhs ex:NT_Elem .
+
+ex:Elem_prod_1 a ex:Production ;
+    rdfs:label "string" ;
+    ex:hasRHSNonTerminal ex:NT_string ;
+    ex:lhs ex:NT_Elem .
+
+ex:Elems_prod_0 a ex:Production ;
+    rdfs:label "Elem Resto" ;
+    ex:hasRHSNonTerminal ex:NT_Elem,
+        ex:NT_Resto ;
+    ex:lhs ex:NT_Elems .
+
+ex:Grammar a owl:Class .
+
+ex:Lista_prod_0 a ex:Production ;
+    rdfs:label "[ Cont" ;
+    ex:hasRHSNonTerminal ex:NT_Cont ;
+    ex:hasRHSTerminal ex:T_square_open ;
+    ex:lhs ex:NT_Lista .
+
+ex:Resto_prod_0 a ex:Production ;
+    rdfs:label "ε" ;
+    ex:hasRHSTerminal ex:T_epsilon ;
+    ex:lhs ex:NT_Resto .
+
+ex:Resto_prod_1 a ex:Production ;
+    rdfs:label ", Elem Resto" ;
+    ex:hasRHSNonTerminal ex:NT_Elem,
+        ex:NT_Resto ;
+    ex:hasRHSTerminal ex:T_comma ;
+    ex:lhs ex:NT_Resto .
+
+ex:T_comma a ex:Terminal ;
+    rdfs:label "," .
 
 ex:T_epsilon a ex:Terminal ;
     rdfs:label "ε" .
 
-ex:Grammar a owl:Class .
+ex:T_square_open a ex:Terminal ;
+    rdfs:label "[" .
 
-ex:S_F_prod_0 a ex:Production ;
-    rdfs:label "1" ;
-    ex:hasRHSTerminal ex:T_1 ;
-    ex:lhs ex:NT_S_F .
+ex:T_square_open0minus9square_closeplus a ex:Terminal ;
+    rdfs:label "[0-9]+" .
 
-ex:S_F_prod_1 a ex:Production ;
-    rdfs:label "2" ;
-    ex:hasRHSTerminal ex:T_2 ;
-    ex:lhs ex:NT_S_F .
+ex:T_square_opencaretangle_openangle_closesquare_closeplus a ex:Terminal ;
+    rdfs:label "[^<>]+" .
 
-ex:S_prod_0 a ex:Production ;
-    rdfs:label "A S_F" ;
-    ex:hasRHSNonTerminal ex:NT_S_F ;
-    ex:hasRHSTerminal ex:T_A ;
-    ex:lhs ex:NT_S .
+ex:int_prod_0 a ex:Production ;
+    rdfs:label "[0-9]+" ;
+    ex:hasRHSTerminal ex:T_square_open0minus9square_closeplus ;
+    ex:lhs ex:NT_int .
 
-ex:T_1 a ex:Terminal ;
-    rdfs:label "1" .
+ex:string_prod_0 a ex:Production ;
+    rdfs:label "[^<>]+" ;
+    ex:hasRHSTerminal ex:T_square_opencaretangle_openangle_closesquare_closeplus ;
+    ex:lhs ex:NT_string .
 
-ex:T_2 a ex:Terminal ;
-    rdfs:label "2" .
-
-ex:T_A a ex:Terminal ;
-    rdfs:label "A" .
-
-ex:NT_S a ex:NonTerminal ;
-    rdfs:label "S" ;
-    ex:firstSet "A" ;
+ex:NT_Lista a ex:NonTerminal ;
+    rdfs:label "Lista" ;
+    ex:firstSet "[" ;
     ex:followSet "$" .
+
+ex:T_square_close a ex:Terminal ;
+    rdfs:label "]" .
+
+ex:NT_Elems a ex:NonTerminal ;
+    rdfs:label "Elems" ;
+    ex:firstSet "[0-9]+,[^<>]+" ;
+    ex:followSet "]" .
+
+ex:NT_int a ex:NonTerminal ;
+    rdfs:label "int" ;
+    ex:firstSet "[0-9]+" ;
+    ex:followSet ",,]" .
+
+ex:NT_string a ex:NonTerminal ;
+    rdfs:label "string" ;
+    ex:firstSet "[^<>]+" ;
+    ex:followSet ",,]" .
+
+ex:NT_Cont a ex:NonTerminal ;
+    rdfs:label "Cont" ;
+    ex:firstSet "[0-9]+,[^<>]+,]" ;
+    ex:followSet "$" .
+
+ex:NT_Elem a ex:NonTerminal ;
+    rdfs:label "Elem" ;
+    ex:firstSet "[0-9]+,[^<>]+" ;
+    ex:followSet ",,]" .
+
+ex:NT_Resto a ex:NonTerminal ;
+    rdfs:label "Resto" ;
+    ex:firstSet ",,ε" ;
+    ex:followSet "]" .
+
+ex:Terminal a owl:Class .
 
 ex:NonTerminal a owl:Class .
 
 ex:Production a owl:Class .
-
-ex:NT_S_F a ex:NonTerminal ;
-    rdfs:label "S_F" ;
-    ex:firstSet "1,2" ;
-    ex:followSet "$" .
-
-ex:Terminal a owl:Class .
 
