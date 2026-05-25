@@ -690,6 +690,8 @@
                     if (select && data.visitors) {
                         select.innerHTML = '<option value="">-- Novo Visitor --</option>';
                         data.visitors.forEach(v => {
+                            // Remove visitor_generator (Costumizado) do dropdown
+                            if (v.name === 'visitor_generated') return;
                             const option = document.createElement('option');
                             option.value = v.name;
                             option.textContent = v.name + (v.is_auto ? ' (Gerado automaticamente)' : ' (Customizado)');
